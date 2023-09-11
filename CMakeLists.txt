@@ -13,8 +13,8 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # use mpicc and mpicxx to compile
-SET(CMAKE_C_COMPILER gcc)
-SET(CMAKE_CXX_COMPILER g++)
+SET(CMAKE_C_COMPILER mpicc)
+SET(CMAKE_CXX_COMPILER mpicxx)
 
 # compiler flags (turn on all the warnings)
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-reorder")
@@ -26,9 +26,12 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-#find_package(Eigen3 3.3 REQUIRED)
+# find packages
+if(NOT DEFINED ENV{PETSC_DIR})
+  message(FATAL_ERROR "ERROR: Could not find Petsc...")
+endif()
 
-#add_definitions(-DLEVELSET_TEST=3)
+#find_package(Eigen3 3.3 REQUIRED)
 
 # -----------------------------
 # for version control
@@ -50,23 +53,28 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 include_directories("${CMAKE_SOURCE_DIR}")
 #include_directories(${CMAKE_SOURCE_DIR}/GeoTools)
 #include_directories(${CMAKE_SOURCE_DIR}/MathTools)
-#link_directories(${CMAKE_SOURCE_DIR}/parser)
+link_directories(${CMAKE_SOURCE_DIR}/parser)
 
 # compile the parser
-#add_custom_target(
-#   extern_lib
-#   COMMAND $(MAKE)
-#   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/parser
-#)
+add_custom_target(
+   extern_lib
+   COMMAND $(MAKE)
+   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/parser
+)
 
 # add the executable
-add_executable(m2c 
+add_executable(erick
 main.cpp
-defs.cpp)
+defs.cpp
+Utils.cpp
+IoData.cpp
+MeshGenerator.cpp
+SpaceOperator.cpp
+SpaceVariable.cpp)
 
 
 # link to libraries
-#target_link_libraries(m2c petsc mpi parser)
-#target_link_libraries(m2c ${CMAKE_DL_LIBS}) #linking to the dl library (-ldl)
-#add_dependencies(m2c extern_lib)
-#add_dependencies(m2c VersionHeader)
+target_link_libraries(erick petsc mpi parser)
+#target_link_libraries(erick ${CMAKE_DL_LIBS}) #linking to the dl library (-ldl)
+add_dependencies(erick extern_lib)
+#add_dependencies(erick VersionHeader)

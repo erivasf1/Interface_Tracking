@@ -38,10 +38,12 @@ void Point::print_point() {
 
 // Tools class function definitions 
 void Tools::point_mesh_valid(Mesh m,Point pt) { //is_valid def. - checks for validity of point
+/*
   bool validity = (m.x_nodes>=pt.x_coord && m.y_nodes>=pt.y_coord)? true:false;
   if (validity==false) {
     cout <<"Point is not in bounds: ";
     p.print_point();
     //error("Invalid Point");
   }
+*/
 }
