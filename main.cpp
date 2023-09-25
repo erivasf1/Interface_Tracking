@@ -123,7 +123,7 @@ try{
     cout<<z_list[i]<<endl;
   }  
   
-  vector<Vec3D> Nodes;vector<Int3> Elements;
+  vector<Vec3D> Nodes;vector<Int2> Elements;
   tool.ReadMeshFileInTopFormat("embedded_surface1.top",Nodes,Elements);//function to extract coords. from m2c
   cout<<"Nodes of embedded surface:\n";
   for (unsigned int i=0;i<Nodes.size();i++){
@@ -136,7 +136,7 @@ try{
   cout<<"Elements of embedded surface:\n";
   for (unsigned int i=0;i<Elements.size();i++){
     cout<<"Element: ";
-    for (unsigned int j=0;j<3;j++){
+    for (unsigned int j=0;j<2;j++){
       cout<<Elements[i].v[j]<<" ";
     }
     cout<<endl;
