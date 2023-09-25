@@ -9,7 +9,7 @@ using std::vector;
 
 MPI_Comm m2c_comm;
 
-void point_mesh_valid(Mesh m,Point pt); //is_valid def. - checks for validity of point
+//void point_mesh_valid(Mesh m,Point pt); //is_valid def. - checks for validity of point
 void error(string s);
 
 int main(int argc, char* argv[]) {
@@ -77,8 +77,7 @@ int main(int argc, char* argv[]) {
 
 
   V.StoreMeshCoordinates(coordinates);
-  V.WriteToVTRFile("V.vtr", "MySol");
-
+  V.WriteToVTRFile("Grid.vtr", "MySol");
 
 
 
@@ -86,20 +85,64 @@ int main(int argc, char* argv[]) {
 
 
 try{
-  Mesh grid{3,3}; // defines object Mesh type called grid
-  grid.print_mesh();
-
-  //creation of all points in mesh
-  vector<Point>mesh_pts;
-  for (int i=0;i<grid.x_nodes;++i) {
-    for (int j=0;j<grid.y_nodes;++j) {
-      Point pt{i,j};
-      pt.print_point();
-      cout<<endl;
-      mesh_pts.push_back(pt);
-    }
+  
+  cout << "X coords. of grid:\n"; //prints out the x coords. of the grid
+  for (unsigned int v=0;v<xcoords.size();v++) {
+    cout <<"x = "<<xcoords[v]<<endl;
+  }
+  cout << "Y coords. of grid:\n"; //prints out the y coords. of the grid
+  for (unsigned int v=0;v<ycoords.size();v++) {
+    cout <<"y = "<<ycoords[v]<<endl;
+  }
+  cout << "Z coords. of grid:\n"; //prints out the z coords. of the grid
+  for (unsigned int v=0;v<zcoords.size();v++) {
+    cout <<"x = "<<zcoords[v]<<endl;
   }
 
+  cout << "Node #'s & coordinates of embedded surface:\n";
+  Tools tool;  
+  vector<int> node_list;
+  vector<int> x_list;
+  vector<int> y_list;
+  vector<int> z_list;
+  tool.extract_coords(node_list,x_list,y_list,z_list); // function call to extract coords. from .top file
+  cout<<"Node #s\n";
+  for (unsigned int i=0;i<node_list.size();i++){
+    cout<<node_list[i]<<endl;
+  }
+  cout<<"X coords\n";
+  for (unsigned int i=0;i<x_list.size();i++){
+    cout<<x_list[i]<<endl;
+  }
+  cout<<"Y coords\n";
+  for (unsigned int i=0;i<y_list.size();i++){
+    cout<<y_list[i]<<endl;
+  }
+  cout<<"Z coords\n";
+  for (unsigned int i=0;i<z_list.size();i++){
+    cout<<z_list[i]<<endl;
+  }  
+  
+  vector<Vec3D> Nodes;vector<Int3> Elements;
+  tool.ReadMeshFileInTopFormat("embedded_surface1.top",Nodes,Elements);//function to extract coords. from m2c
+  cout<<"Nodes of embedded surface:\n";
+  for (unsigned int i=0;i<Nodes.size();i++){
+    cout<<"Point: ";
+    for (unsigned int j=0;j<3;j++){
+      cout<<Nodes[i][j]<<" ";
+    }
+    cout<<endl;
+  }
+  cout<<"Elements of embedded surface:\n";
+  for (unsigned int i=0;i<Elements.size();i++){
+    cout<<"Element: ";
+    for (unsigned int j=0;j<3;j++){
+      cout<<Elements[i].v[j]<<" ";
+    }
+    cout<<endl;
+  }
+
+/*
   Point pt1{1,2}; //Point object creations
   Point pt2{2,2};
   Point pt3{1,1};
@@ -114,7 +157,7 @@ try{
 
   
 
-/*
+
   Triangle t1{pt1,pt2,pt3};
 
   t1.print_triangle();*/
