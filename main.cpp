@@ -9,8 +9,6 @@ using std::vector;
 
 MPI_Comm m2c_comm;
 
-//void point_mesh_valid(Mesh m,Point pt); //is_valid def. - checks for validity of point
-void error(string s);
 
 int main(int argc, char* argv[]) {
 
@@ -84,7 +82,6 @@ int main(int argc, char* argv[]) {
 
 
 
-try{
   
   cout << "X coords. of grid:\n"; //prints out the x coords. of the grid
   for (unsigned int v=0;v<xcoords.size();v++) {
@@ -100,29 +97,7 @@ try{
   }
 
   cout << "Node #'s & coordinates of embedded surface:\n";
-  Tools tool;  
-  vector<int> node_list;
-  vector<int> x_list;
-  vector<int> y_list;
-  vector<int> z_list;
-  tool.extract_coords(node_list,x_list,y_list,z_list); // function call to extract coords. from .top file
-  cout<<"Node #s\n";
-  for (unsigned int i=0;i<node_list.size();i++){
-    cout<<node_list[i]<<endl;
-  }
-  cout<<"X coords\n";
-  for (unsigned int i=0;i<x_list.size();i++){
-    cout<<x_list[i]<<endl;
-  }
-  cout<<"Y coords\n";
-  for (unsigned int i=0;i<y_list.size();i++){
-    cout<<y_list[i]<<endl;
-  }
-  cout<<"Z coords\n";
-  for (unsigned int i=0;i<z_list.size();i++){
-    cout<<z_list[i]<<endl;
-  }  
-  
+  Tools tool; 
   vector<Vec3D> Nodes;vector<Int2> Elements;
   tool.ReadMeshFileInTopFormat("embedded_surface1.top",Nodes,Elements);//function to extract coords. from m2c
   cout<<"Nodes of embedded surface:\n";
@@ -142,36 +117,59 @@ try{
     cout<<endl;
   }
 
-/*
-  Point pt1{1,2}; //Point object creations
-  Point pt2{2,2};
-  Point pt3{1,1};
-  
-  
-  Tools tools; 
-  tools.point_mesh_valid(grid,pt1); // checks if points are valid in mesh grid
-  tools.point_mesh_valid(grid,pt2);
-  tools.point_mesh_valid(grid,pt3); 
-  
-  cout<<endl;
+  //distance between 2 points 
+  double dist=tool.point_distance(Nodes[0],xcoords[0],ycoords[0]);
+  cout<<"Node: "<<Nodes[0].v[0]<<","<<Nodes[0].v[1]<<endl;
+  cout<<"Grid Point: "<<xcoords[0]<<","<<ycoords[0]<<endl;
+  cout<<"Distance: "<<dist<<endl;
 
-  
+  //closest grid points to each embedded surface node
+  vector<Vec3D> close_grid_points;
+  tool.closest_point(close_grid_points,Nodes,xcoords,ycoords);
+  cout<<"Closest Grid points to each embedded surface\n";
+  for (unsigned int i=0;i<close_grid_points.size();i++){
+    cout<<"Node"<<i+1<<": "<<close_grid_points[i].v[0]<<","<<close_grid_points[i].v[1]<<","<<close_grid_points[i].v[2]<<endl;
+  }
+
+/**  //max coordinats of embedded surface
+  //tool.max_coords(xmax,ymax,xmin,ymin,Nodes); //TODO
+  cout<<"Embedded surface x max: "<<xmax<<endl;
+  cout<<"Embedded surface y max: "<<ymax<<endl;
+  cout<<"Embedded surface x min: "<<xmin<<endl;
+  cout<<"Embedded surface y min: "<<ymin<<endl;
+**/
+
+  // grid info.
+  cout<<"imax: "<<imax<<endl<< "jmax: "<<jmax<<endl;
+  cout<<"i0: "<<i0<<endl<< "j0: "<<j0<<endl;
+
+ 
+  /*coords = (Vec3D***)coordinates.GetDataPointer();
+
+  double xmax,ymax,xmin,ymin;
+  tool.max_min_coords(xmax,ymax,xmin,ymin,Nodes);
+  for(int j=j0;j<jmax;j++){
+    for(int i=i0;i<imax;i++){
+      if(xcoords[j]>=xmin && xcoords[j]<=xmax && ycoords[i]>=ymin && ycoords[i]<=ymax) //condition if grid coord. is inside of embedded surface
+        color[0][j][i] = 1;
+      else
+        color[0][j][i] = 0;
+    }
+  }*/
+
+  SpaceVariable3D Color(comm, &(dms.ghosted1_1dof));
+  double*** color = Color.GetDataPointer();
+
+  tool.flood_fill(color,imax,jmax);
+
+  Color.RestoreDataPointerAndInsert();
+  //coordinates.RestoreDataPointerToLocalVector();
+  Color.WriteToVTRFile("Color.vtr", "Color");
 
 
-  Triangle t1{pt1,pt2,pt3};
-
-  t1.print_triangle();*/
-}
-catch (runtime_error& e) {
-  cerr << "Runtime Error: " << e.what() << "\n";
-}
 
 
-
-
-
-
-
+  Color.Destroy();
   V.Destroy();
   spo.Destroy();
   dms.DestroyAllDataManagers();
@@ -179,12 +177,7 @@ catch (runtime_error& e) {
   MPI_Finalize();
 
   return 0;
+
 }
 
-
-// Global functions
-
-void error(string s) {
-  throw runtime_error(s);
-}
 
