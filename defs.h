@@ -63,7 +63,8 @@ struct Tools { //Tools used to compare different user-defined types
   void max_min_coords(double &xmax,double &ymax,double &xmin,double &ymin,vector<Vec3D> &es); //provides the greatest x & y value of a given vector <Vec3D>
   void grid_nodes_solid_domain(double &xmax,double &ymax,double &xmin,double &ymin,double &delta_x,double &delta_y,vector<double> &xcoord,vector<double> &ycoord,vector<Vec3D> &es); //provides the grid nodes that are contained in the solid domain, including the "wetted" surface -----> ONLY WORKS FOR RECTANGLES AS OF NOW!!! 
   void grid_element_solid_domain(); //!Still need to figure out arguments for this
-  void flood_fill(double*** color,int &imax, int &jmax); //updates ***color with the flood fill
-  void fill_node(int i,int j,int &imax,int &jmax,double*** color); //performs the flood fill algorithm
+  void flood_fill(int i,int j,int &imax,int &jmax,int &imin,int &jmin,double*** color); //performs the flood fill algorithm
+  void SpaceVariable3D_print(double*** color,int &imax,int &jmax); //prints the color values of each point
+  vector<Vec3D> grid_nodes(int &imax,int &jmax); //returns a vector of all the grid nodes
 };
 #endif

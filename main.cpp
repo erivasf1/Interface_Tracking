@@ -57,6 +57,7 @@ int main(int argc, char* argv[]) {
   
   int i0, j0, k0, imax, jmax, kmax; //!< corners of the real subdomain
   coordinates.GetCornerIndices(&i0, &j0, &k0, &imax, &jmax, &kmax);
+  cout<<"imax: "<<imax<<endl;
   for(int j=j0; j<jmax; j++)
     for(int i=i0; i<imax; i++) {
 
@@ -93,7 +94,7 @@ int main(int argc, char* argv[]) {
   }
   cout << "Z coords. of grid:\n"; //prints out the z coords. of the grid
   for (unsigned int v=0;v<zcoords.size();v++) {
-    cout <<"x = "<<zcoords[v]<<endl;
+    cout <<"z = "<<zcoords[v]<<endl;
   }
 
   cout << "Node #'s & coordinates of embedded surface:\n";
@@ -139,29 +140,38 @@ int main(int argc, char* argv[]) {
   cout<<"Embedded surface y min: "<<ymin<<endl;
 **/
 
-  // grid info.
+  // Color grid info.
   cout<<"imax: "<<imax<<endl<< "jmax: "<<jmax<<endl;
   cout<<"i0: "<<i0<<endl<< "j0: "<<j0<<endl;
 
- 
-  /*coords = (Vec3D***)coordinates.GetDataPointer();
-
-  double xmax,ymax,xmin,ymin;
-  tool.max_min_coords(xmax,ymax,xmin,ymin,Nodes);
-  for(int j=j0;j<jmax;j++){
-    for(int i=i0;i<imax;i++){
-      if(xcoords[j]>=xmin && xcoords[j]<=xmax && ycoords[i]>=ymin && ycoords[i]<=ymax) //condition if grid coord. is inside of embedded surface
-        color[0][j][i] = 1;
-      else
-        color[0][j][i] = 0;
-    }
-  }*/
+  vector<Vec3D> nodes = tool.grid_nodes(imax,jmax);
 
   SpaceVariable3D Color(comm, &(dms.ghosted1_1dof));
   double*** color = Color.GetDataPointer();
 
-  tool.flood_fill(color,imax,jmax);
+  int start_nodex = 1; //starting at (1,1)
+  int start_nodey = 1;
 
+  //hard coding a square boundary
+  vector<int> i_coords{2,3,4,5,6,7}; //for top and bottom side of square
+  vector<int> j_coords{2,7};
+  for (auto j=0;j<j_coords.size();j++){
+    for (auto i=0;i<i_coords.size();i++){
+      color[0][j_coords[j]][i_coords[i]]=2;
+    }
+  }
+  vector<int> j2_coords{2,3,4,5,6,7}; //for top and bottom side of square
+  vector<int> i2_coords{2,7};
+  for (auto i=0;i<i2_coords.size();i++){
+    for (auto j=0;j<j2_coords.size();j++){
+      color[0][j2_coords[j]][i2_coords[i]]=2;
+    }
+  }
+
+  
+
+  tool.flood_fill(start_nodex,start_nodey,imax,jmax,i0,j0,color);
+  tool.SpaceVariable3D_print(color,imax,jmax); //printing the color values of each point
   Color.RestoreDataPointerAndInsert();
   //coordinates.RestoreDataPointerToLocalVector();
   Color.WriteToVTRFile("Color.vtr", "Color");

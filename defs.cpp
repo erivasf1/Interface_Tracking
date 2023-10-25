@@ -393,26 +393,38 @@ void Tools::grid_nodes_solid_domain(double &xmax,double &ymax,double &xmin,doubl
   }  
 }
 
-//Pseudo code
  
-void Tools::fill_node(int i,int j,int &imax,int &jmax,double*** color){ //algorithm obtained from https://en.wikipedia.org/wiki/Flood_fill
-  if (color[0][j][i]=1 || i>=imax || j>=jmax) return; //condition if node is already colored or out of grid domain
+void Tools::flood_fill(int i,int j,int &imax,int &jmax,int &imin,int &jmin,double*** color){ //algorithm obtained from https://en.wikipedia.org/wiki/Flood_fill
+  //  if (double*** color is empty or DNE) error(); //checks if triple pointer color exists
+  if (color[0][j][i]!=0 || i>imax || j>jmax || i<imin || j<jmin) return;  //condition if node is already colored or out of grid domain
   color[0][j][i] = 1; //setting current node to a color
-  fill_node(i,j-1,imax,jmax,color); //moving south by 1 node
-  fill_node(i,j+1,imax,jmax,color); //moving north by 1 node
-  fill_node(i-1,j,imax,jmax,color); //moving west by 1 node
-  fill_node(i+1,j,imax,jmax,color); //moving east by 1 node
+  flood_fill(i,j-1,imax,jmax,imin,jmin,color); //moving south by 1 node
+  flood_fill(i,j+1,imax,jmax,imin,jmin,color); //moving north by 1 node
+  flood_fill(i-1,j,imax,jmax,imin,jmin,color); //moving west by 1 node
+  flood_fill(i+1,j,imax,jmax,imin,jmin,color); //moving east by 1 node
+
   return;
 }
 
-void Tools::flood_fill(double*** color,int &imax,int &jmax){
 
-//  if (double*** color is empty or DNE) error(); //checks if triple pointer color exists
+void Tools::SpaceVariable3D_print(double*** color,int &imax,int &jmax){
+  cout<<"Color of all grid points:"<<endl;
+  for (int i=0;i<imax+1;i++){
+    for (int j=0;j<jmax+1;j++){
+      cout<<"Point: "<<i<<","<<j<<" = "<<color[0][j][i]<<endl;
+    }
+  }
+}  
 
-  int i=0,j=0; //starting at center of grid (i,j=0)    
-  Tools::fill_node(i,j,imax,jmax,color); // set color to the node
-  return;
-  
-  
+vector<Vec3D> Tools::grid_nodes(int &imax,int &jmax){ //reading nodes from right to left
+  vector<Vec3D> Nodes;
+  Vec3D node;
+  for (int i=0;i<=imax;i++){
+    for (int j=0;j<=jmax;j++){
+       node[0]=i;node[1]=j;node[2]=1;
+       Nodes.push_back(node);
+    }
+  }
+  return Nodes;
 }
 
