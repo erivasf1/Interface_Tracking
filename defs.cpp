@@ -406,44 +406,54 @@ void Tools::grid_nodes_solid_domain(double &xmax,double &ymax,double &xmin,doubl
 
   return;
 }*/
-void Tools::flood_fill(int i,int j,int &imax,int &jmax,int &imin,int &jmin,double*** color,vector<Vec3D> &surface_nodes,vector<Int2> &surface_connectivities,vector<double> &xcoords,vector<double> &ycoords){ //algorithm obtained from https://en.wikipedia.org/wiki/Flood_fill
+void Tools::flood_fill(int i,int j,int &imax,int &jmax,int &imin,int &jmin,double*** color){ //algorithm obtained from https://en.wikipedia.org/wiki/Flood_fill
   //  if (double*** color is empty or DNE) error(); //checks if triple pointer color exists
   //if (blocked==true || i>imax || j>jmax || i<imin || j<jmin) return;  //condition if node is already colored or out of grid domain
-  if (i>imax || j>jmax || i<imin || j<jmin) return;  //condition if node is already colored or out of grid domain
+  if (color[0][j][i]!=0|| i>imax || j>jmax || i<imin || j<jmin) return;  //condition if node is already colored or out of grid domain
 
-//*************************Intersection check(Fluid-Structure Interface)******************************//
-  bool intersection_south = intersect(i,j,i,j-1,imax,jmax,imin,jmin,surface_nodes,surface_connectivities,xcoords,ycoords); //grid line segment south of node - intersection check
-  if (intersection_south == true){
-    //cout<<"Line segment colored\n";
-    color[0][j][i]=2;color[0][j-1][i]=2;
-  }
-  bool intersection_north = intersect(i,j,i,j+1,imax,jmax,imin,jmin,surface_nodes,surface_connectivities,xcoords,ycoords); //grid line segment north of node - intersection check
-  if (intersection_north == true){
-    //cout<<"Line segment colored\n";
-    color[0][j][i]=2;color[0][j+1][i]=2;
-
-  }
-  bool intersection_west = intersect(i,j,i-1,j,imax,jmax,imin,jmin,surface_nodes,surface_connectivities,xcoords,ycoords); //grid line segment west of node - intersection check
-  if (intersection_west == true){
-    //cout<<"Line segment colored\n";
-    color[0][j][i]=2;color[0][j][i-1]=2;
-
-  }
-  bool intersection_east = intersect(i,j,i+1,j,imax,jmax,imin,jmin,surface_nodes,surface_connectivities,xcoords,ycoords); //grid line segment east of node - intersection check
-  if (intersection_east == true){
-    //cout<<"Line segment colored\n";
-    color[0][j][i]=2;color[0][j][i+1]=2;
-
-  }
 //*************************Flood Fill (Fluid Domain)**************************************//
-  if (color[0][j][i]!=0) return; //returns if color is either 1 or 2
   color[0][j][i] = 1; //only filling in node w/ 1 if it has no intersections with embedded surface
-  flood_fill(i,j-1,imax,jmax,imin,jmin,color,surface_nodes,surface_connectivities,xcoords,ycoords); //moving south by 1 node
-  flood_fill(i,j+1,imax,jmax,imin,jmin,color,surface_nodes,surface_connectivities,xcoords,ycoords); //moving north by 1 node
-  flood_fill(i-1,j,imax,jmax,imin,jmin,color,surface_nodes,surface_connectivities,xcoords,ycoords); //moving east by 1 node
-  flood_fill(i+1,j,imax,jmax,imin,jmin,color,surface_nodes,surface_connectivities,xcoords,ycoords); //moving west by 1 node
+  flood_fill(i,j-1,imax,jmax,imin,jmin,color); //moving south by 1 node
+  flood_fill(i,j+1,imax,jmax,imin,jmin,color); //moving north by 1 node
+  flood_fill(i-1,j,imax,jmax,imin,jmin,color); //moving east by 1 node
+  flood_fill(i+1,j,imax,jmax,imin,jmin,color); //moving west by 1 node
 
   return;
+}
+
+void Tools::intersect_fill(int i,int j,int &imax,int &jmax,int &imin,int &jmin,double*** color,vector<Vec3D> &surface_nodes,vector<Int2> &surface_connectivities,vector<double> &xcoords,vector<double> &ycoords){
+
+  for (int j=jmin;j<jmax;j++){
+    for (int i=imin;i<imax;i++){
+      
+  //*************************Intersection check(Fluid-Structure Interface)******************************//
+      if (i==imax||i==jmax||i==imin||j==jmin) continue;
+      bool intersection_south = intersect(i,j,i,j-1,imax,jmax,imin,jmin,surface_nodes,surface_connectivities,xcoords,ycoords); //grid line segment south of node - intersection check
+      if (intersection_south == true){
+        //cout<<"Line segment colored\n";
+        color[0][j][i]=2;color[0][j-1][i]=2;
+      }
+      bool intersection_north = intersect(i,j,i,j+1,imax,jmax,imin,jmin,surface_nodes,surface_connectivities,xcoords,ycoords); //grid line segment north of node - intersection check
+      if (intersection_north == true){
+        //cout<<"Line segment colored\n";
+        color[0][j][i]=2;color[0][j+1][i]=2;
+
+      }
+      bool intersection_west = intersect(i,j,i-1,j,imax,jmax,imin,jmin,surface_nodes,surface_connectivities,xcoords,ycoords); //grid line segment west of node - intersection check
+      if (intersection_west == true){
+        //cout<<"Line segment colored\n";
+        color[0][j][i]=2;color[0][j][i-1]=2;
+
+      }
+      bool intersection_east = intersect(i,j,i+1,j,imax,jmax,imin,jmin,surface_nodes,surface_connectivities,xcoords,ycoords); //grid line segment east of node - intersection check
+      if (intersection_east == true){
+        //cout<<"Line segment colored\n";
+        color[0][j][i]=2;color[0][j][i+1]=2;
+
+      }
+    }
+  }
+
 }
 
 bool Tools::intersect(int grid_node1i,int grid_node1j,int grid_node2i,int grid_node2j,int &imax,int &jmax,int &imin,int &jmin,vector<Vec3D> &surface_nodes,vector<Int2> &surface_connectivities,vector<double> &xcoords,vector<double> &ycoords){ //will return eithe true or false if the nodes of the grid intersect with the embedded surface. Use the line to line intersection formula from wikipedia. Once point of intersection is found, use a condition to check if intersection point is on the same line as the grid line and if is in the bounds of the grid points. Reference: https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection 
@@ -468,7 +478,6 @@ bool Tools::intersect(int grid_node1i,int grid_node1j,int grid_node2i,int grid_n
     //cout<<"node1 id from connectivities = "<<*p1<<endl; 
     Vec3D surface_node1 = surface_nodes[*p1];Vec3D surface_node2 = surface_nodes[*p2]; //coordinates of surface nodes - Vec3D
     
-   //delete p1;delete p2;
     
     double intersect_point = point_of_intersection(grid_node1,grid_node2,surface_node1,surface_node2);
     if (intersect_point == 1){ //intersection detected

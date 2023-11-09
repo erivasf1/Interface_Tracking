@@ -179,11 +179,12 @@ int main(int argc, char* argv[]) {
  
 
   cout<<"Before Flood fill."<<endl; 
-  tool.flood_fill(start_nodex,start_nodey,imax,jmax,i0,j0,color,Nodes,Elements,xcoords,ycoords);
+  tool.intersect_fill(start_nodex,start_nodey,imax,jmax,i0,j0,color,Nodes,Elements,xcoords,ycoords);
+  tool.flood_fill(start_nodex,start_nodey,imax,jmax,i0,j0,color);
   //color[0][11][15]=3;
   cout<<"After Flood fill & before print_color"<<endl;
  // tool.SpaceVariable3D_print(color,imax,jmax); //printing the color values of each point
-  cout<<"After print_color \n";
+ /* cout<<"After print_color \n";
   cout<<"imax: "<<imax<<endl<< "jmax: "<<jmax<<endl;
   cout<<"i0: "<<i0<<endl<< "j0: "<<j0<<endl;
   cout<<"dx = "<<dx[0]<<endl;
@@ -191,7 +192,7 @@ int main(int argc, char* argv[]) {
   double t = ((x1-x3)*(y3-y4)-(y1-y3)*(x3-x4))/((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)); //1st bezier parameter
   double u = ((x1-x3)*(y1-y2)-(y1-y3)*(x1-x2))/((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)); //2nd bezier parameter
   cout<<"t = "<<t<<"\t"<<"u = "<<u<<endl;
-
+*/
   Color.RestoreDataPointerAndInsert();
   //coordinates.RestoreDataPointerToLocalVector();
   Color.WriteToVTRFile("Color.vtr", "Color");
