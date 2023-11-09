@@ -63,8 +63,11 @@ struct Tools { //Tools used to compare different user-defined types
   void max_min_coords(double &xmax,double &ymax,double &xmin,double &ymin,vector<Vec3D> &es); //provides the greatest x & y value of a given vector <Vec3D>
   void grid_nodes_solid_domain(double &xmax,double &ymax,double &xmin,double &ymin,double &delta_x,double &delta_y,vector<double> &xcoord,vector<double> &ycoord,vector<Vec3D> &es); //provides the grid nodes that are contained in the solid domain, including the "wetted" surface -----> ONLY WORKS FOR RECTANGLES AS OF NOW!!! 
   void grid_element_solid_domain(); //!Still need to figure out arguments for this
-  void flood_fill(int i,int j,int &imax,int &jmax,int &imin,int &jmin,double*** color); //performs the flood fill algorithm
+  void flood_fill(int i,int j,int &imax,int &jmax,int &imin,int &jmin,double*** color,vector<Vec3D> &surface_nodes,vector<Int2> &surface_connectivities,vector<double> &xcoords,vector<double> &ycoords); //performs the flood fill algorithm
+
+  bool intersect(int grid_node1i,int grid_node1j,int grid_node2i,int grid_node2j,int &imax,int &jmax,int &imin,int &jmin,vector<Vec3D> &surface_nodes,vector<Int2> &surface_connectivities,vector<double> &xcoords,vector<double> &ycoords); //returns true if an interesection is detected
+
+  double point_of_intersection(Vec3D &grid_node1,Vec3D &grid_node2,Vec3D &surface_node1,Vec3D &surface_node2); //bezier-parameter calc. to determine intersection
   void SpaceVariable3D_print(double*** color,int &imax,int &jmax); //prints the color values of each point
-  vector<Vec3D> grid_nodes(int &imax,int &jmax); //returns a vector of all the grid nodes
 };
 #endif

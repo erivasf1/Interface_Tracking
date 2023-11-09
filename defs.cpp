@@ -394,8 +394,9 @@ void Tools::grid_nodes_solid_domain(double &xmax,double &ymax,double &xmin,doubl
 }
 
  
-void Tools::flood_fill(int i,int j,int &imax,int &jmax,int &imin,int &jmin,double*** color){ //algorithm obtained from https://en.wikipedia.org/wiki/Flood_fill
+/*void Tools::flood_fill(int i,int j,int &imax,int &jmax,int &imin,int &jmin,double*** color){ //algorithm obtained from https://en.wikipedia.org/wiki/Flood_fill
   //  if (double*** color is empty or DNE) error(); //checks if triple pointer color exists
+  //if (color[0][j][i]!=0 || i>imax || j>jmax || i<imin || j<jmin) return;  //condition if node is already colored or out of grid domain
   if (color[0][j][i]!=0 || i>imax || j>jmax || i<imin || j<jmin) return;  //condition if node is already colored or out of grid domain
   color[0][j][i] = 1; //setting current node to a color
   flood_fill(i,j-1,imax,jmax,imin,jmin,color); //moving south by 1 node
@@ -404,8 +405,100 @@ void Tools::flood_fill(int i,int j,int &imax,int &jmax,int &imin,int &jmin,doubl
   flood_fill(i+1,j,imax,jmax,imin,jmin,color); //moving east by 1 node
 
   return;
+}*/
+void Tools::flood_fill(int i,int j,int &imax,int &jmax,int &imin,int &jmin,double*** color,vector<Vec3D> &surface_nodes,vector<Int2> &surface_connectivities,vector<double> &xcoords,vector<double> &ycoords){ //algorithm obtained from https://en.wikipedia.org/wiki/Flood_fill
+  //  if (double*** color is empty or DNE) error(); //checks if triple pointer color exists
+  //if (blocked==true || i>imax || j>jmax || i<imin || j<jmin) return;  //condition if node is already colored or out of grid domain
+  if (i>imax || j>jmax || i<imin || j<jmin) return;  //condition if node is already colored or out of grid domain
+
+//*************************Intersection check(Fluid-Structure Interface)******************************//
+  bool intersection_south = intersect(i,j,i,j-1,imax,jmax,imin,jmin,surface_nodes,surface_connectivities,xcoords,ycoords); //grid line segment south of node - intersection check
+  if (intersection_south == true){
+    //cout<<"Line segment colored\n";
+    color[0][j][i]=2;color[0][j-1][i]=2;
+  }
+  bool intersection_north = intersect(i,j,i,j+1,imax,jmax,imin,jmin,surface_nodes,surface_connectivities,xcoords,ycoords); //grid line segment north of node - intersection check
+  if (intersection_north == true){
+    //cout<<"Line segment colored\n";
+    color[0][j][i]=2;color[0][j+1][i]=2;
+
+  }
+  bool intersection_west = intersect(i,j,i-1,j,imax,jmax,imin,jmin,surface_nodes,surface_connectivities,xcoords,ycoords); //grid line segment west of node - intersection check
+  if (intersection_west == true){
+    //cout<<"Line segment colored\n";
+    color[0][j][i]=2;color[0][j][i-1]=2;
+
+  }
+  bool intersection_east = intersect(i,j,i+1,j,imax,jmax,imin,jmin,surface_nodes,surface_connectivities,xcoords,ycoords); //grid line segment east of node - intersection check
+  if (intersection_east == true){
+    //cout<<"Line segment colored\n";
+    color[0][j][i]=2;color[0][j][i+1]=2;
+
+  }
+//*************************Flood Fill (Fluid Domain)**************************************//
+  if (color[0][j][i]!=0) return; //returns if color is either 1 or 2
+  color[0][j][i] = 1; //only filling in node w/ 1 if it has no intersections with embedded surface
+  flood_fill(i,j-1,imax,jmax,imin,jmin,color,surface_nodes,surface_connectivities,xcoords,ycoords); //moving south by 1 node
+  flood_fill(i,j+1,imax,jmax,imin,jmin,color,surface_nodes,surface_connectivities,xcoords,ycoords); //moving north by 1 node
+  flood_fill(i-1,j,imax,jmax,imin,jmin,color,surface_nodes,surface_connectivities,xcoords,ycoords); //moving east by 1 node
+  flood_fill(i+1,j,imax,jmax,imin,jmin,color,surface_nodes,surface_connectivities,xcoords,ycoords); //moving west by 1 node
+
+  return;
 }
 
+bool Tools::intersect(int grid_node1i,int grid_node1j,int grid_node2i,int grid_node2j,int &imax,int &jmax,int &imin,int &jmin,vector<Vec3D> &surface_nodes,vector<Int2> &surface_connectivities,vector<double> &xcoords,vector<double> &ycoords){ //will return eithe true or false if the nodes of the grid intersect with the embedded surface. Use the line to line intersection formula from wikipedia. Once point of intersection is found, use a condition to check if intersection point is on the same line as the grid line and if is in the bounds of the grid points. Reference: https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection 
+ 
+  if (grid_node2i>imax || grid_node2j>jmax || grid_node2i<imin || grid_node2j<jmin) return false; //condition if line segment extends further past the grid boundaries
+  bool blocked = false; //setting blocked to false by default
+
+  Vec3D grid_node1(xcoords[grid_node1i],ycoords[grid_node1j],0); //coordinates of grid nodes - Vec3D
+  Vec3D grid_node2(xcoords[grid_node2i],ycoords[grid_node2j],0);
+
+  if (grid_node1i==16 && grid_node1j==13){
+    cout<<"Here is the problem!"<<endl;
+    cout<<"For node:16,13"<<" X-coord. = "<<xcoords[grid_node1i]<<"\t"<<"Y_coord. = "<<ycoords[grid_node1j]<<endl;
+    cout<<"For node:17,13"<<" X-coord. = "<<xcoords[grid_node2i]<<"\t"<<"Y_coord. = "<<ycoords[grid_node2j]<<endl;
+    cout<<"blocked ="<<blocked<<endl;
+  }
+  //cout<<"gridnode1i: "<<grid_node1i<<"\t"<<"grid_node1j: "<<grid_node1j<<endl;
+
+  for (int i=0;i<surface_connectivities.size();i++){ //comparing specific grid line segment with all line segmnents of embedded surface
+    Int2 surface_lineseg = surface_connectivities[i]; //line segment of embedded surface
+    int* p1 = &surface_lineseg.v[0]; int* p2 = &surface_lineseg.v[1];
+    //cout<<"node1 id from connectivities = "<<*p1<<endl; 
+    Vec3D surface_node1 = surface_nodes[*p1];Vec3D surface_node2 = surface_nodes[*p2]; //coordinates of surface nodes - Vec3D
+    
+   //delete p1;delete p2;
+    
+    double intersect_point = point_of_intersection(grid_node1,grid_node2,surface_node1,surface_node2);
+    if (intersect_point == 1){ //intersection detected
+      blocked = true;
+      return blocked;
+    } 
+  }
+  return blocked;
+}
+
+double Tools::point_of_intersection(Vec3D &grid_node1,Vec3D &grid_node2,Vec3D &surface_node1,Vec3D &surface_node2){ //calculates the point of intersection between 2 line segments using the bezier parameters to compute point of intersection
+  double x1=grid_node1.v[0];double x2=grid_node2.v[0];double x3=surface_node1.v[0];double x4=surface_node2.v[0]; //x-coordinates
+  double y1=grid_node1.v[1];double y2=grid_node2.v[1];double y3=surface_node1.v[1];double y4=surface_node2.v[1]; //y-coordinates
+
+  double t = ((x1-x3)*(y3-y4)-(y1-y3)*(x3-x4))/((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)); //1st bezier parameter
+  double u = ((x1-x3)*(y1-y2)-(y1-y3)*(x1-x2))/((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)); //2nd bezier parameter
+ 
+
+
+  if (t>1 || t<0 || u>1 || u<0) return 0; //bezier parameters condition 
+  
+ /* cout<<"Grid Node1: x-coord:"<<x1<<"\ty-coord: "<<y1<<endl;
+  cout<<"Grid Node2: x-coord:"<<x2<<"\ty-coord: "<<y2<<endl;
+  cout<<"Surface Node1: x-coord:"<<x3<<"\ty-coord: "<<y3<<endl;
+  cout<<"Surface Node2: x-coord:"<<x4<<"\ty-coord: "<<y4<<endl;*/
+  double Px = x1+(t*(x2-x1));double Py = y1+(t*(y2-y1));
+  cout<<"intersection point = "<<Px<<","<<Py<<endl;
+  Vec2D point(Px,Py);
+  return 1;
+}
 
 void Tools::SpaceVariable3D_print(double*** color,int &imax,int &jmax){
   cout<<"Color of all grid points:"<<endl;
@@ -415,16 +508,3 @@ void Tools::SpaceVariable3D_print(double*** color,int &imax,int &jmax){
     }
   }
 }  
-
-vector<Vec3D> Tools::grid_nodes(int &imax,int &jmax){ //reading nodes from right to left
-  vector<Vec3D> Nodes;
-  Vec3D node;
-  for (int i=0;i<=imax;i++){
-    for (int j=0;j<=jmax;j++){
-       node[0]=i;node[1]=j;node[2]=1;
-       Nodes.push_back(node);
-    }
-  }
-  return Nodes;
-}
-

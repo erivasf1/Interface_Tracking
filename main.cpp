@@ -66,7 +66,8 @@ int main(int argc, char* argv[]) {
     }
 
 
-
+  //cout<<"node(0,0):\n"<<"x-coord: "<<coords[0][0][0][0]<<endl
+  //<<"y-coord: "<<coords[0][0][0][1]<<endl;  
 
 
 
@@ -81,8 +82,14 @@ int main(int argc, char* argv[]) {
 
 
 
+  cout<<"dx = "<<dx[0]<<endl;
 
+  //modifying xcoords and ycoords
+  //xcoords.insert(xcoords.begin(),xcoords[0]-dx[0]);
+  xcoords.push_back(xcoords.back()+dx[0]);
 
+  //ycoords.insert(ycoords.begin(),ycoords[0]-dy[0]);
+  ycoords.push_back(ycoords.back()+dy[0]);
   
   cout << "X coords. of grid:\n"; //prints out the x coords. of the grid
   for (unsigned int v=0;v<xcoords.size();v++) {
@@ -100,7 +107,7 @@ int main(int argc, char* argv[]) {
   cout << "Node #'s & coordinates of embedded surface:\n";
   Tools tool; 
   vector<Vec3D> Nodes;vector<Int2> Elements;
-  tool.ReadMeshFileInTopFormat("embedded_surface1.top",Nodes,Elements);//function to extract coords. from m2c
+  tool.ReadMeshFileInTopFormat("embedded_arbitrary.top",Nodes,Elements);//function to extract coords. from m2c
   cout<<"Nodes of embedded surface:\n";
   for (unsigned int i=0;i<Nodes.size();i++){
     cout<<"Point: ";
@@ -117,7 +124,7 @@ int main(int argc, char* argv[]) {
     }
     cout<<endl;
   }
-
+/*
   //distance between 2 points 
   double dist=tool.point_distance(Nodes[0],xcoords[0],ycoords[0]);
   cout<<"Node: "<<Nodes[0].v[0]<<","<<Nodes[0].v[1]<<endl;
@@ -132,7 +139,7 @@ int main(int argc, char* argv[]) {
     cout<<"Node"<<i+1<<": "<<close_grid_points[i].v[0]<<","<<close_grid_points[i].v[1]<<","<<close_grid_points[i].v[2]<<endl;
   }
 
-/**  //max coordinats of embedded surface
+**  //max coordinats of embedded surface
   //tool.max_coords(xmax,ymax,xmin,ymin,Nodes); //TODO
   cout<<"Embedded surface x max: "<<xmax<<endl;
   cout<<"Embedded surface y max: "<<ymax<<endl;
@@ -144,15 +151,15 @@ int main(int argc, char* argv[]) {
   cout<<"imax: "<<imax<<endl<< "jmax: "<<jmax<<endl;
   cout<<"i0: "<<i0<<endl<< "j0: "<<j0<<endl;
 
-  vector<Vec3D> nodes = tool.grid_nodes(imax,jmax);
 
   SpaceVariable3D Color(comm, &(dms.ghosted1_1dof));
   double*** color = Color.GetDataPointer();
 
-  int start_nodex = 1; //starting at (1,1)
-  int start_nodey = 1;
+  int start_nodex = 0; //starting at node(i=0,j=0)
+  int start_nodey = 0;
+  cout<<"After start nodes"<<endl;
 
-  //hard coding a square boundary
+/*hard coding a square boundary
   vector<int> i_coords{2,3,4,5,6,7}; //for top and bottom side of square
   vector<int> j_coords{2,7};
   for (auto j=0;j<j_coords.size();j++){
@@ -160,6 +167,7 @@ int main(int argc, char* argv[]) {
       color[0][j_coords[j]][i_coords[i]]=2;
     }
   }
+//neWidth",2 <---- Future note: find out what this means!
   vector<int> j2_coords{2,3,4,5,6,7}; //for top and bottom side of square
   vector<int> i2_coords{2,7};
   for (auto i=0;i<i2_coords.size();i++){
@@ -167,11 +175,23 @@ int main(int argc, char* argv[]) {
       color[0][j2_coords[j]][i2_coords[i]]=2;
     }
   }
+*/
+ 
 
-  
+  cout<<"Before Flood fill."<<endl; 
+  tool.flood_fill(start_nodex,start_nodey,imax,jmax,i0,j0,color,Nodes,Elements,xcoords,ycoords);
+  //color[0][11][15]=3;
+  cout<<"After Flood fill & before print_color"<<endl;
+ // tool.SpaceVariable3D_print(color,imax,jmax); //printing the color values of each point
+  cout<<"After print_color \n";
+  cout<<"imax: "<<imax<<endl<< "jmax: "<<jmax<<endl;
+  cout<<"i0: "<<i0<<endl<< "j0: "<<j0<<endl;
+  cout<<"dx = "<<dx[0]<<endl;
+  double x1=0;double y1=1.14286;double x2=0;double y2=0.914286;double x3=-1;double y3=0.9;double x4=1.1;double y4=1.1;
+  double t = ((x1-x3)*(y3-y4)-(y1-y3)*(x3-x4))/((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)); //1st bezier parameter
+  double u = ((x1-x3)*(y1-y2)-(y1-y3)*(x1-x2))/((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)); //2nd bezier parameter
+  cout<<"t = "<<t<<"\t"<<"u = "<<u<<endl;
 
-  tool.flood_fill(start_nodex,start_nodey,imax,jmax,i0,j0,color);
-  tool.SpaceVariable3D_print(color,imax,jmax); //printing the color values of each point
   Color.RestoreDataPointerAndInsert();
   //coordinates.RestoreDataPointerToLocalVector();
   Color.WriteToVTRFile("Color.vtr", "Color");
