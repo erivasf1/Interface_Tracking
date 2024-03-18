@@ -29,7 +29,7 @@ void Point::print_point() {
 }
 
 
-//----Tools class function definitions--------------------- 
+//------------TOOLS CLASS FUNCTION DEFINITIONS--------------------- 
 void Tools::point_mesh_valid(Mesh m,Point pt) { //is_valid def. - checks for validity of point
 /*
   bool validity = (m.x_nodes>=pt.x_coord && m.y_nodes>=pt.y_coord)? true:false;
@@ -97,8 +97,7 @@ void Tools::ReadMeshFileInTopFormat(const char *filename, vector<Vec3D> &Xs, vec
     print_error("*** Error: Cannot open embedded surface mesh file (%s).\n", filename);
     exit_mpi();
   }
- 
-  int MAXLINE = 500;
+ int MAXLINE = 500;
   char line[MAXLINE], key1[MAXLINE], key2[MAXLINE]; //, copyForType[MAXLINE];
 
   int num0 = 0;
@@ -188,8 +187,7 @@ void Tools::ReadMeshFileInTopFormat(const char *filename, vector<Vec3D> &Xs, vec
   }
   if(!found_elems) {
     print_error("*** Error: Unable to find element set in %s.\n", filename);
-    exit_mpi();
-  }
+    exit_mpi(); }
 
   // ----------------------------
   // Now, check and store nodes
@@ -241,8 +239,7 @@ void Tools::ReadMeshFileInTopFormat(const char *filename, vector<Vec3D> &Xs, vec
     id = (*it)[0];
     node1 = (*it)[1];
     node2 = (*it)[2];
-      
-    if(old2new.empty()) {//node set is original order
+      if(old2new.empty()) {//node set is original order
 
       if(node1<=0 || node1 > nNodes) {
         print_error("*** Error: Detected unknown node number (%d) in element %d (%s).\n", node1, id, filename);
@@ -343,31 +340,23 @@ double Tools::min_list(vector<double> &list){
   return minimum; 
 }
 
-double Tools::point_distance(Vec3D &p1,double &p2x,double &p2y){
+double Tools::point_distance(Vec3D &pt1,Vec3D &pt2){
   // Distance formula - d = sqrt[(x2-x1)^2 + (y2-y1)^2]
-  double dist = sqrt(pow(p1.v[0]-p2x,2)+pow(p1.v[1]-p2y,2));
+  double dist = sqrt(pow(pt1.v[0]-pt2.v[0],2)+pow(pt1.v[1]-pt2.v[1],2));
   return dist;  
 }
 
-void Tools::closest_point(vector<Vec3D> &d,vector<Vec3D> &es,vector<double> &Gx,vector<double> &Gy){ 
-  for (unsigned int n=0;n<es.size();n++){
-    int idx_min=0; //1st Grid x coord
-    int idy_min=0; //1st Grid y coord
-    double dist_current=Tools::point_distance(es[n],Gx[0],Gy[0]); //distance with 1st Grid point
-    for (unsigned int i=0;i<Gx.size();i++){ //xcoord loop
-      for (unsigned int j=0;j<Gy.size();j++){ //ycoord loop
-        double dist_new = Tools::point_distance(es[n],Gx[i],Gy[j]); // calculates the distance
-        if (dist_new<dist_current){ 
-          dist_current=dist_new; //updates dist_current with the new smaller dist_new value 
-          idx_min=i; //updates id_min with the id of the grid point with the smallest distance
-          idy_min=j;
-        }
-      }
+Vec3D Tools::closest_point(Vec3D &pt1,vector<Vec3D> &pts){ 
+  double dist=100; Vec3D closest_pt;double dist_compare; 
+  for (unsigned int n=0;n<pts.size();n++){
+    dist_compare = point_distance(pt1,pts[n]);
+    if (dist_compare == 0) continue; //distance of zero means the same point
+    if (dist_compare < dist){ //condition if a closer point is found
+      dist = dist_compare;
+      closest_pt = pts[n];
     }
-    Vec3D closest_grid_point{Gx[idx_min],Gy[idy_min],0};
-    d.push_back(closest_grid_point); //adds the grid point closest to the embedded surface point
-    
-  }  
+  }
+  return closest_pt;
 }
 
 void Tools::max_min_coords(double &xmax,double &ymax,double &xmin,double &ymin,vector<Vec3D> &es){
@@ -383,6 +372,26 @@ void Tools::max_min_coords(double &xmax,double &ymax,double &xmin,double &ymin,v
   }
 }
 
+int Tools::getIndex(vector<Vec3D> &v, Vec3D K) 
+{ 
+
+  for (int i=0;i<v.size();i++){
+    double dist = point_distance(K,v[i]);
+    if (dist == 0) return i; //distance of 0 means same point
+  }
+  return -1; //case if K is not in v
+}
+
+vector<Vec3D> Tools::remove(vector<Vec3D> &v, Vec3D &N){
+  //if (v.size == 0) return -- perform error handling for this case
+  vector<Vec3D> trunc; //truncated vector that is returned
+  for (int i=0;i<v.size();i++){
+    double dist = point_distance(N,v[i]);
+    if (dist==0) continue; //distance of 0 means same point
+    trunc.push_back(v[i]);
+  }
+  return trunc;
+}
 
 void Tools::grid_nodes_solid_domain(double &xmax,double &ymax,double &xmin,double &ymin,double &delta_x,double &delta_y,vector<double> &xcoord,vector<double> &ycoord,vector<Vec3D> &es){
   Vec3D node; // grid node that will be filled in
@@ -394,61 +403,94 @@ void Tools::grid_nodes_solid_domain(double &xmax,double &ymax,double &xmin,doubl
 }
 
  
-/*void Tools::flood_fill(int i,int j,int &imax,int &jmax,int &imin,int &jmin,double*** color){ //algorithm obtained from https://en.wikipedia.org/wiki/Flood_fill
+void Tools::flood_fill(int i,int j,int &imax,int &jmax,int &imin,int &jmin,double*** color){ //algorithm obtained from https://en.wikipedia.org/wiki/Flood_fill
   //  if (double*** color is empty or DNE) error(); //checks if triple pointer color exists
-  //if (color[0][j][i]!=0 || i>imax || j>jmax || i<imin || j<jmin) return;  //condition if node is already colored or out of grid domain
-  if (color[0][j][i]!=0 || i>imax || j>jmax || i<imin || j<jmin) return;  //condition if node is already colored or out of grid domain
-  color[0][j][i] = 1; //setting current node to a color
+  //if (blocked==true || i>imax || j>jmax || i<imin || j<jmin) return;  //condition if node is already colored or out of grid domain
+  if (i>imax || j>jmax || i<imin || j<jmin) return;  //condition if node is already colored or out of grid domain
+  if (color[0][j][i]!=0) return;  //condition if node is already colored or out of grid domain
+
+//*************************Flood Fill (Fluid Domain)**************************************//
+  color[0][j][i] = 1; //only filling in node w/ 1 if it has no intersections with embedded surface
   flood_fill(i,j-1,imax,jmax,imin,jmin,color); //moving south by 1 node
   flood_fill(i,j+1,imax,jmax,imin,jmin,color); //moving north by 1 node
   flood_fill(i-1,j,imax,jmax,imin,jmin,color); //moving west by 1 node
   flood_fill(i+1,j,imax,jmax,imin,jmin,color); //moving east by 1 node
 
   return;
-}*/
-void Tools::flood_fill(int i,int j,int &imax,int &jmax,int &imin,int &jmin,double*** color){ //algorithm obtained from https://en.wikipedia.org/wiki/Flood_fill
-  //  if (double*** color is empty or DNE) error(); //checks if triple pointer color exists
-  //if (blocked==true || i>imax || j>jmax || i<imin || j<jmin) return;  //condition if node is already colored or out of grid domain
-  if (color[0][j][i]!=0|| i>imax || j>jmax || i<imin || j<jmin) return;  //condition if node is already colored or out of grid domain
-
-//*************************Flood Fill (Fluid Domain)**************************************//
-  color[0][j][i] = 1; //only filling in node w/ 1 if it has no intersections with embedded surface
-  flood_fill(i,j-1,imax,jmax,imin,jmin,color); //moving south by 1 node
-  flood_fill(i,j+1,imax,jmax,imin,jmin,color); //moving north by 1 node
-  flood_fill(i-1,j,imax,jmax,imin,jmin,color); //moving east by 1 node
-  flood_fill(i+1,j,imax,jmax,imin,jmin,color); //moving west by 1 node
-
-  return;
 }
 
-void Tools::intersect_fill(int i,int j,int &imax,int &jmax,int &imin,int &jmin,double*** color,vector<Vec3D> &surface_nodes,vector<Int2> &surface_connectivities,vector<double> &xcoords,vector<double> &ycoords){
+void Tools::intersect_fill(int i,int j,int &imax,int &jmax,int &imin,int &jmin,double*** color,int &color_val,vector<Vec3D> &surface_nodes,vector<Int2> &surface_connectivities,vector<double> &xcoords,vector<double> &ycoords,vector<Vec3D> &intersecting_nodes,vector<Int2> &intersecting_edges){
 
   for (int j=jmin;j<jmax;j++){
     for (int i=imin;i<imax;i++){
       
   //*************************Intersection check(Fluid-Structure Interface)******************************//
+  //***BLOCKED meaning - line connnecting one node from another is "blocked" an intersecting line from the embedded surface******
       if (i==imax||i==jmax||i==imin||j==jmin) continue;
       bool intersection_south = intersect(i,j,i,j-1,imax,jmax,imin,jmin,surface_nodes,surface_connectivities,xcoords,ycoords); //grid line segment south of node - intersection check
+      Vec3D P1, P2; //declaration of intersecting nodes
+      Int2 edge; //declaration of intersecting edge
+
       if (intersection_south == true){
         //cout<<"Line segment colored\n";
-        color[0][j][i]=2;color[0][j-1][i]=2;
+        color[0][j][i]=color_val;color[0][j-1][i]=color_val;
+
+        P1[0] = xcoords[i]; P1[1] = ycoords[j];
+        P2[0] = xcoords[i]; P2[1] = ycoords[j-1];
+  
+        intersecting_nodes.push_back(P1);       
+        intersecting_nodes.push_back(P2);       
+        
+        edge[0] = intersecting_nodes.size()-1;
+        edge[1] = intersecting_nodes.size();
+        intersecting_edges.push_back(edge);
       }
       bool intersection_north = intersect(i,j,i,j+1,imax,jmax,imin,jmin,surface_nodes,surface_connectivities,xcoords,ycoords); //grid line segment north of node - intersection check
       if (intersection_north == true){
         //cout<<"Line segment colored\n";
-        color[0][j][i]=2;color[0][j+1][i]=2;
+        color[0][j][i]=color_val;color[0][j+1][i]=color_val;
+
+        P1[0] = xcoords[i]; P1[1] = ycoords[j];
+        P2[0] = xcoords[i]; P2[1] = ycoords[j+1];
+  
+        intersecting_nodes.push_back(P1);       
+        intersecting_nodes.push_back(P2);       
+        
+        edge[0] = intersecting_nodes.size()-1;
+        edge[1] = intersecting_nodes.size();
+        intersecting_edges.push_back(edge);
 
       }
       bool intersection_west = intersect(i,j,i-1,j,imax,jmax,imin,jmin,surface_nodes,surface_connectivities,xcoords,ycoords); //grid line segment west of node - intersection check
       if (intersection_west == true){
         //cout<<"Line segment colored\n";
-        color[0][j][i]=2;color[0][j][i-1]=2;
+        color[0][j][i]=color_val;color[0][j][i-1]=color_val;
+
+        P1[0] = xcoords[i]; P1[1] = ycoords[j];
+        P2[0] = xcoords[i-1]; P2[1] = ycoords[j];
+  
+        intersecting_nodes.push_back(P1);       
+        intersecting_nodes.push_back(P2);       
+        
+        edge[0] = intersecting_nodes.size()-1;
+        edge[1] = intersecting_nodes.size();
+        intersecting_edges.push_back(edge);
 
       }
       bool intersection_east = intersect(i,j,i+1,j,imax,jmax,imin,jmin,surface_nodes,surface_connectivities,xcoords,ycoords); //grid line segment east of node - intersection check
       if (intersection_east == true){
         //cout<<"Line segment colored\n";
-        color[0][j][i]=2;color[0][j][i+1]=2;
+        color[0][j][i]=color_val;color[0][j][i+1]=color_val;
+
+        P1[0] = xcoords[i]; P1[1] = ycoords[j];
+        P2[0] = xcoords[i+1]; P2[1] = ycoords[j];
+  
+        intersecting_nodes.push_back(P1);       
+        intersecting_nodes.push_back(P2);       
+        
+        edge[0] = intersecting_nodes.size()-1;
+        edge[1] = intersecting_nodes.size();
+        intersecting_edges.push_back(edge);
 
       }
     }
@@ -457,22 +499,15 @@ void Tools::intersect_fill(int i,int j,int &imax,int &jmax,int &imin,int &jmin,d
 }
 
 bool Tools::intersect(int grid_node1i,int grid_node1j,int grid_node2i,int grid_node2j,int &imax,int &jmax,int &imin,int &jmin,vector<Vec3D> &surface_nodes,vector<Int2> &surface_connectivities,vector<double> &xcoords,vector<double> &ycoords){ //will return eithe true or false if the nodes of the grid intersect with the embedded surface. Use the line to line intersection formula from wikipedia. Once point of intersection is found, use a condition to check if intersection point is on the same line as the grid line and if is in the bounds of the grid points. Reference: https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection 
- 
   if (grid_node2i>imax || grid_node2j>jmax || grid_node2i<imin || grid_node2j<jmin) return false; //condition if line segment extends further past the grid boundaries
   bool blocked = false; //setting blocked to false by default
 
   Vec3D grid_node1(xcoords[grid_node1i],ycoords[grid_node1j],0); //coordinates of grid nodes - Vec3D
   Vec3D grid_node2(xcoords[grid_node2i],ycoords[grid_node2j],0);
 
-  if (grid_node1i==16 && grid_node1j==13){
-    cout<<"Here is the problem!"<<endl;
-    cout<<"For node:16,13"<<" X-coord. = "<<xcoords[grid_node1i]<<"\t"<<"Y_coord. = "<<ycoords[grid_node1j]<<endl;
-    cout<<"For node:17,13"<<" X-coord. = "<<xcoords[grid_node2i]<<"\t"<<"Y_coord. = "<<ycoords[grid_node2j]<<endl;
-    cout<<"blocked ="<<blocked<<endl;
-  }
   //cout<<"gridnode1i: "<<grid_node1i<<"\t"<<"grid_node1j: "<<grid_node1j<<endl;
 
-  for (int i=0;i<surface_connectivities.size();i++){ //comparing specific grid line segment with all line segmnents of embedded surface
+  for (long unsigned int i=0;i<surface_connectivities.size();i++){ //comparing specific grid line segment with all line segmnents of embedded surface
     Int2 surface_lineseg = surface_connectivities[i]; //line segment of embedded surface
     int* p1 = &surface_lineseg.v[0]; int* p2 = &surface_lineseg.v[1];
     //cout<<"node1 id from connectivities = "<<*p1<<endl; 
@@ -492,19 +527,19 @@ double Tools::point_of_intersection(Vec3D &grid_node1,Vec3D &grid_node2,Vec3D &s
   double x1=grid_node1.v[0];double x2=grid_node2.v[0];double x3=surface_node1.v[0];double x4=surface_node2.v[0]; //x-coordinates
   double y1=grid_node1.v[1];double y2=grid_node2.v[1];double y3=surface_node1.v[1];double y4=surface_node2.v[1]; //y-coordinates
 
-  double t = ((x1-x3)*(y3-y4)-(y1-y3)*(x3-x4))/((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)); //1st bezier parameter
-  double u = ((x1-x3)*(y1-y2)-(y1-y3)*(x1-x2))/((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)); //2nd bezier parameter
+  double t = ((x1-x3)*(y3-y4)-(y1-y3)*(x3-x4))/((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)); //t value (non-dimensional)
+  double u = ((x1-x3)*(y1-y2)-(y1-y3)*(x1-x2))/((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)); //u value (non-dimensional)
  
 
 
-  if (t>1 || t<0 || u>1 || u<0) return 0; //bezier parameters condition 
+  if (t>1 || t<0 || u>1 || u<0) return 0; //line segement condition 
   
  /* cout<<"Grid Node1: x-coord:"<<x1<<"\ty-coord: "<<y1<<endl;
   cout<<"Grid Node2: x-coord:"<<x2<<"\ty-coord: "<<y2<<endl;
   cout<<"Surface Node1: x-coord:"<<x3<<"\ty-coord: "<<y3<<endl;
   cout<<"Surface Node2: x-coord:"<<x4<<"\ty-coord: "<<y4<<endl;*/
   double Px = x1+(t*(x2-x1));double Py = y1+(t*(y2-y1));
-  cout<<"intersection point = "<<Px<<","<<Py<<endl;
+  //cout<<"intersection point = "<<Px<<","<<Py<<endl;
   Vec2D point(Px,Py);
   return 1;
 }
@@ -517,3 +552,207 @@ void Tools::SpaceVariable3D_print(double*** color,int &imax,int &jmax){
     }
   }
 }  
+
+//---------------TOPOLOGY TRACKER FUNCTION DEFINITIONS-------------
+
+bool Topology::is_inside(Vec3D &point,vector<Int2> &elements,vector<Vec3D> &nodes){
+  Tools tool;
+
+// ray casting of point
+  Vec3D point_cast{100,point.v[1],point.v[2]}; //corresponding point to A in ray cast
+  //now comparing if point is inside shape
+  int count = 0;
+  for (int i=0;i<elements.size();i++){
+    Vec3D node1 = nodes[elements[i].v[0]];
+    Vec3D node2 = nodes[elements[i].v[1]];
+
+    //special case: point parallel to edge
+    if (point.v[0]==node1.v[0] && point.v[0]==node2.v[0]){ //case if xcoord is constant
+      double min_x = (node1.v[0]<node2.v[0]) ? node1.v[0]:node2.v[0];
+      double max_x = (node1.v[0]>node2.v[0]) ? node1.v[0]:node2.v[0];
+
+      if (point.v[0] >= min_x && point.v[0] <= max_x) return true;
+      else return false;
+    } 
+
+    if (point.v[1]==node1.v[1] && point.v[1]==node2.v[1]){ //case if ycoord is constant
+      double min_y = (node1.v[1]<node2.v[1]) ? node1.v[1]:node2.v[1];
+      double max_y = (node1.v[1]>node2.v[1]) ? node1.v[1]:node2.v[1];
+
+      if (point.v[0] >= min_y && point.v[0] <= max_y) return true;
+      else return false;
+    } 
+
+    double pt_intersect_ans = tool.point_of_intersection(point,point_cast,node1,node2); //checks for an intersection
+    
+    if (pt_intersect_ans == 1){
+      count +=1;
+    }
+  }
+  //cout<<"final count: "<<count<<endl;
+  if (count % 2 == 0 || count == 0) return false; // returns false if collision number is even or 0
+  return true;
+}
+
+vector<Vec3D> Topology::inside_points() {
+  vector<Vec3D> in_pts; //creating the inside points vector that will be returned
+//checking all shape A points in shape B
+  for (long unsigned int i=0;i<shape1_nodes.size();i++){
+    Vec3D pt_a = shape1_nodes[i]; //shape 1 point
+
+    if (is_inside(pt_a,shape2_elements,shape2_nodes) == true) in_pts.push_back(pt_a); // adds point to inside points list condition
+  }
+
+//checking all shape B points in shape A
+  for (long unsigned int i=0;i<shape2_nodes.size();i++){
+    Vec3D pt_b = shape2_nodes[i]; //shape 1 point
+
+    if (is_inside(pt_b,shape1_elements,shape1_nodes) == true) in_pts.push_back(pt_b); // adds point to inside points list condition
+  }
+
+  return in_pts; //returns the list of inside points
+}
+
+Vec3D Topology::pt_of_intersection(Vec3D &pt1_A,Vec3D &pt2_A,Vec3D &pt1_B,Vec3D &pt2_B){
+
+  double x1=pt1_A.v[0];double x2=pt2_A.v[0];double x3=pt1_B.v[0];double x4=pt2_B.v[0]; //x-coordinates
+  double y1=pt1_A.v[1];double y2=pt2_A.v[1];double y3=pt1_B.v[1];double y4=pt2_B.v[1]; //y-coordinates
+
+  Vec3D no_intersect(10,10,10); // no intersection value
+
+  //special case if line segments are parallel to each other
+  if ((x1==x3 && x2==x4) || (y1==y3 && y2==y4)) return no_intersect; //this type of point will be classified as an intersecting point
+
+  double t = ((x1-x3)*(y3-y4)-(y1-y3)*(x3-x4))/((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)); //t value (non-dimensional)
+  double u = ((x1-x3)*(y1-y2)-(y1-y3)*(x1-x2))/((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)); //u value (non-dimensional)
+ 
+
+
+  if (t>1 || t<0 || u>1 || u<0){  ; //condition if there is no intersection
+    return no_intersect;
+  }
+  
+  double Px = x1+(t*(x2-x1));double Py = y1+(t*(y2-y1));
+  Vec3D intersect_point(Px,Py,0);
+  return intersect_point;
+
+}
+
+vector<Vec3D> Topology::intersecting_points(){
+  vector<Vec3D> intersecting_pts; //vector of intersecting points that gets returned
+  for (long unsigned int i=0;i<shape1_elements.size();i++){
+    //Vec3D points of shape 1 element
+    Vec3D pt1_a = shape1_nodes[shape1_elements[i].v[0]];
+    Vec3D pt2_a = shape1_nodes[shape1_elements[i].v[1]];
+    for (long unsigned int j=0;j<shape2_elements.size();j++){
+      //Vec3D points of shape 2 element
+      Vec3D pt1_b = shape2_nodes[shape2_elements[j].v[0]];
+      Vec3D pt2_b = shape2_nodes[shape2_elements[j].v[1]];
+      //calculates the point of intersection, if any
+      Vec3D intersect_pt = pt_of_intersection(pt1_a,pt2_a,pt1_b,pt2_b);
+      if (intersect_pt.v[0] == 10){ //no intersection condition
+        continue;
+      }
+      intersecting_pts.push_back(intersect_pt); //appends calculated point of intersection to intersecting points vector
+    }  
+  }
+  return intersecting_pts;
+}
+
+void Topology::shape_construct(vector<Int2> &overlap_connectivities,vector<Vec3D> &overlap_nodes,vector<Vec3D> &intersecting_pts,vector<Vec3D> &inside_pts){
+  if (intersecting_pts.size() == 0 && inside_pts.size() == 0) { //case if the shapes do not intersect
+    cout<<"Shapes do not intersect!"<<endl;
+    return;
+  }
+  //creation of unsorted list of interesecting + inside points - all_unsorted_pts
+  for (int i=0;i<intersecting_pts.size();i++){ 
+    overlap_nodes.push_back(intersecting_pts[i]);
+  }
+  for (int i=0;i<inside_pts.size();i++){ 
+    overlap_nodes.push_back(inside_pts[i]);
+  }
+  vector<Vec3D> all_unsorted_pts = overlap_nodes; //vector that contains all unsorted points of overlap shape
+  Vec3D pt1,pt_closest;
+  Tools tool;
+  Int2 element;
+  cout<<"\nbeginning overlap shape construction: \n";
+  //construction of overlap nodes vector
+  pt1 = all_unsorted_pts[0]; //starts off at 1st point of unsorted list
+  while (all_unsorted_pts.size() != 1) {
+  
+    cout<<"unsorted list size: "<<all_unsorted_pts.size()<<endl;
+
+    pt_closest = tool.closest_point(pt1,all_unsorted_pts);
+    pt1.print("Point 1");
+    pt_closest.print("Closest point");
+ 
+    //get index of closest point and pt 1
+    int index_pt1 = tool.getIndex(overlap_nodes,pt1); //?
+    int index_pt_closest = tool.getIndex(overlap_nodes,pt_closest);
+
+    //make element out of them
+    element.v[0] = index_pt1; element.v[1] = index_pt_closest;
+
+    //append to the overlap_elements list
+    overlap_connectivities.push_back(element);
+
+    all_unsorted_pts = tool.remove(all_unsorted_pts,pt1); //removes the point that was looked at
+    pt1 = pt_closest;
+
+
+  }
+  //adds the last element from last point to 1st of overlap_nodes
+  element.v[0] = overlap_connectivities.back().v[1]; element.v[1] = overlap_connectivities[0].v[0]; 
+  overlap_connectivities.push_back(element);
+  //last point equals final point in all_unsorted_list
+  //make element of this point and 1st point of 1st element in overlap_elements
+  //overlap_connectivities.push_back(element);
+  
+  return;
+}
+
+void Topology::shape_fill(vector<Int2> &overlap_connectivities,vector<Vec3D> &overlap_nodes,vector<double> &xcoords,vector<double> &ycoords,double*** &color, int color_val){
+  Tools tool; //tool object creation
+  //need to define bounding box on overlap shape so grid nodes in bounding box wil be compared
+  //cout<<"NOW STARTING SHAPE FILL"<<endl;
+  double xmax,xmin,ymax,ymin; //max and min coordinates of overlap shape
+  tool.max_min_coords(xmax,ymax,xmin,ymin,overlap_nodes); 
+  /*cout<<"OVERLAP NODES: "<<endl;
+  for (int i=0;i<overlap_nodes.size();i++){
+    cout<<"Node: "<<overlap_nodes[i].v[0]<<" "<<overlap_nodes[i].v[1]<<" "<<overlap_nodes[i].v[2]<<endl;
+  }*/
+
+  vector <double> box_xcoords,box_ycoords; //these are the x and y grid coordinates that are in the bounding box
+  for (long unsigned int i=0;i<xcoords.size();i++){
+    if (xcoords[i] >= xmin && xcoords[i] <= xmax) box_xcoords.push_back(xcoords[i]); //case if grid x coord is in overlap bounding box
+    if (ycoords[i] >= ymin && ycoords[i] <= ymax) box_ycoords.push_back(ycoords[i]); //case if grid y coord s in overlp bounding box
+  }
+ 
+  /*cout<<"These are the points that are in the bounding box"<<endl;  
+  cout<<"bounding box size: "<<box_xcoords.size()<<"x\t"<<box_ycoords.size()<<endl;
+  for (int i=0;i<box_xcoords.size();i++){
+    cout<<"box point: "<<box_xcoords[i]<<"\t"<<box_ycoords[i]<<endl;
+  } */
+  //now coloring bounding box points that are inside the overlap shape
+  for (int i=0;i<box_xcoords.size();i++){ 
+    for (int j=0;j<box_ycoords.size();j++){
+      Vec3D grid_point{box_xcoords[i],box_ycoords[j],0};
+   //   cout<<"Grid Point: "<<grid_point.v[0]<<"\t"<<grid_point.v[1]<<endl;
+  //    cout<<"grid point before the inside check:"<<endl;
+    //  cout<<"box point: "<<box_xcoords[i]<<"\t"<<box_ycoords[j]<<endl;
+      
+      bool inside = is_inside(grid_point,overlap_connectivities,overlap_nodes); 
+      if (inside == true){
+        //finds the index of the box coord in the grid coords list to determine node # for color
+        auto itx = find(xcoords.begin(),xcoords.end(),box_xcoords[i]);
+        auto ity = find(ycoords.begin(),ycoords.end(),box_ycoords[j]);
+        int xindex = itx - xcoords.begin();
+        int yindex = ity - ycoords.begin();
+        //cout<<"xindex: "<<xindex<<endl;
+        //cout<<"yindex: "<<yindex<<endl;
+        color[0][yindex][xindex] = color_val;
+      }
+    }
+ }
+  return;
+}

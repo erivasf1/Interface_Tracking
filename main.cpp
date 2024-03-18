@@ -27,8 +27,7 @@ int main(int argc, char* argv[]) {
   iod.finalize();
   //! Initialize PETSc
   PETSC_COMM_WORLD = comm;
-  PetscInitialize(&argc, &argv, argc>=3 ? argv[2] : (char*)0, (char*)0);
-  // -----------------------------------------------------------------
+  PetscInitialize(&argc, &argv, argc>=3 ? argv[2] : (char*)0, (char*)0); // -----------------------------------------------------------------
 
   // -----------------------------------------------------------------
   vector<double> xcoords, dx, ycoords, dy, zcoords, dz;
@@ -91,7 +90,7 @@ int main(int argc, char* argv[]) {
   //ycoords.insert(ycoords.begin(),ycoords[0]-dy[0]);
   ycoords.push_back(ycoords.back()+dy[0]);
   
-  cout << "X coords. of grid:\n"; //prints out the x coords. of the grid
+  /*cout << "X coords. of grid:\n"; //prints out the x coords. of the grid
   for (unsigned int v=0;v<xcoords.size();v++) {
     cout <<"x = "<<xcoords[v]<<endl;
   }
@@ -103,31 +102,13 @@ int main(int argc, char* argv[]) {
   for (unsigned int v=0;v<zcoords.size();v++) {
     cout <<"z = "<<zcoords[v]<<endl;
   }
-
-  cout << "Node #'s & coordinates of embedded surface:\n";
-  Tools tool; 
-  vector<Vec3D> Nodes_sub;vector<Int2> Elements_sub; //nodes & connectivities of sub
-  vector<Vec3D> Nodes_arbshape;vector<Int2> Elements_arbshape; //nodes & connectivities of arb. shape
-  
-  tool.ReadMeshFileInTopFormat("submarine.top",Nodes_sub,Elements_sub);//function to extract coords. from m2c
-  tool.ReadMeshFileInTopFormat("embedded_arbitrary.top",Nodes_arbshape,Elements_arbshape);//function to extract coords. from m2c
-  /*cout<<"Nodes of embedded surface:\n";
-  for (unsigned int i=0;i<Nodes.size();i++){
-    cout<<"Point: ";
-    for (unsigned int j=0;j<3;j++){
-      cout<<Nodes[i][j]<<" ";
-    }
-    cout<<endl;
-  }
-  cout<<"Elements of embedded surface:\n";
-  for (unsigned int i=0;i<Elements.size();i++){
-    cout<<"Element: ";
-    for (unsigned int j=0;j<2;j++){
-      cout<<Elements[i].v[j]<<" ";
-    }
-    cout<<endl;
-  }
 */
+  Tools tool; 
+  vector<Vec3D> Nodes_rect1;vector<Int2> Elements_rect1; //nodes & connectivities of sub
+  vector<Vec3D> Nodes_rect2;vector<Int2> Elements_rect2; //nodes & connectivities of arb. shape
+  
+  tool.ReadMeshFileInTopFormat("rect1.top",Nodes_rect1,Elements_rect1);//function to extract coords. from m2c
+  tool.ReadMeshFileInTopFormat("rect2.top",Nodes_rect2,Elements_rect2);//function to extract coords. from m2c
   // Color grid info.
   cout<<"imax: "<<imax<<endl<< "jmax: "<<jmax<<endl;
   cout<<"i0: "<<i0<<endl<< "j0: "<<j0<<endl;
@@ -141,15 +122,80 @@ int main(int argc, char* argv[]) {
 
   int start_nodex = 0; //starting at node(i=0,j=0)
   int start_nodey = 0;
-  cout<<"After start nodes"<<endl;
 
+  int shape1_color = 2; int shape2_color = 3; int overlap_color = 4;
+
+  tool.intersect_fill(start_nodex,start_nodey,imax,jmax,i0,j0,color,shape1_color,Nodes_rect1,Elements_rect1,xcoords,ycoords,intersecting_nodes,intersecting_edges); //intersect fill of sub
+
+  tool.intersect_fill(start_nodex,start_nodey,imax,jmax,i0,j0,color,shape2_color,Nodes_rect2,Elements_rect2,xcoords,ycoords,intersecting_nodes,intersecting_edges); //intersect fill of arb.shape
+
+ //----------------------------TOPOLOGICAL CHANGE TEST----------------------------------------
  
-  // Interface tracker application
-  cout<<"Before Flood fill."<<endl; 
-  tool.intersect_fill(start_nodex,start_nodey,imax,jmax,i0,j0,color,Nodes_sub,Elements_sub,xcoords,ycoords,intersecting_nodes,intersecting_edges); //intersect fill of sub
-  tool.intersect_fill(start_nodex,start_nodey,imax,jmax,i0,j0,color,Nodes_arbshape,Elements_arbshape,xcoords,ycoords,intersecting_nodes,intersecting_edges); //intersect fill of arb.shape
+  Topology top(Elements_rect1,Nodes_rect1,Elements_rect2,Nodes_rect2); 
+
+  //INSIDE POINTS
+  vector<Vec3D> pts_inside;
+  pts_inside = top.inside_points(); //vector of inside points
+  cout << "inside points: "<<pts_inside.size()<<endl; //would be a good idea to have this as a function -- e.g. disp_points()
+  for (int i=0;i<pts_inside.size();i++){
+    cout<<"Point "<<i+1<<": "<<pts_inside[i].v[0]<<"\t"<<pts_inside[i].v[1]<<endl;
+  }
+
+  //INTERSECTING POINTS
+  vector<Vec3D> intersecting_pts;
+  intersecting_pts = top.intersecting_points(); //vector of inside points
+  cout << "intersecting points: "<<intersecting_pts.size()<<endl; //would be a good idea to have this as a function -- e.g. disp_points()
+
+  for (int i=0;i<intersecting_pts.size();i++){
+    cout<<"Point "<<i+1<<": "<<intersecting_pts[i].v[0]<<"\t"<<intersecting_pts[i].v[1]<<endl;
+  }
+
+  //CONSTRUCTION OF NODES AND CONNECTIVITIES OF OVERLAP SHAPE
+  vector<Vec3D> Nodes; vector<Int2> Connectivities;
+
+  top.shape_construct(Connectivities,Nodes,intersecting_pts,pts_inside);
+  cout<<"Nodes after overlap shape construction"<<endl;
+  for (int i=0;i<Nodes.size();i++){
+    cout<<"Node "<<i+1<<": "<<Nodes[i].v[0]<<"\t"<<Nodes[i].v[1]<<endl;
+  }
+
+  cout<<"Connectivities after overlap shape construction"<<endl;
+  for (int i=0;i<Connectivities.size();i++){
+    cout<<"Element "<<i+1<<": "<<Connectivities[i].v[0]<<"\t"<<Connectivities[i].v[1]<<endl;
+  }
+
+  //FILLING OF GRID NODES FOR 2 ARBITRARY SHAPES
+  top.shape_fill(Elements_rect1,Nodes_rect1,xcoords,ycoords,color,shape1_color);
+  top.shape_fill(Elements_rect2,Nodes_rect2,xcoords,ycoords,color,shape2_color);
+
+  //WRITING CONSTRUCTED SHAPE TO FILE IN .TOP FORMAT - (would be a good idea to have this as a function)
+  if (Connectivities.size() != 0 & Nodes.size() != 0){ //case if shapes are intersecting
+    cout<<"Overlap detected"<<endl;
+    ofstream myfile;
+    myfile.open("overlap_shape.txt");
+    if (myfile.is_open()){
+
+      myfile<<"Nodes MySurfaceNodes"<<endl;
+      for (int i=0;i<Nodes.size();i++){
+        myfile<<i+1<<"  "<<Nodes[i].v[0]<<"  "<<Nodes[i].v[1]<<"  "<<Nodes[i].v[2]<<endl;
+      }
+
+
+      myfile<<"Elements MySurface using MySurfaceNodes"<<endl;
+      for (int i=0;i<Connectivities.size();i++){
+        myfile<<i+1<<"  "<<1<<"  "<<Connectivities[i].v[0]+1<<"  "<<Connectivities[i].v[1]+1<<endl;
+      }
+      myfile.close();
+
+    }
+ 
+    top.shape_fill(Connectivities,Nodes,xcoords,ycoords,color,overlap_color); //fills the grid nodes that are in overlap shape
+  }
+
+  //---------------------------GRID FLOOD FILL-------------------------------------------
+
+
   tool.flood_fill(start_nodex,start_nodey,imax,jmax,i0,j0,color);
-  cout<<"After Flood fill & before print_color"<<endl;
 
   Color.RestoreDataPointerAndInsert();
   //coordinates.RestoreDataPointerToLocalVector();
