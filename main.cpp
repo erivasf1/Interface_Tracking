@@ -103,12 +103,14 @@ int main(int argc, char* argv[]) {
     cout <<"z = "<<zcoords[v]<<endl;
   }
 */
+
+//-----------------------------SOLID-FLUID INTERFACE OF SHAPES-----------------------------
   Tools tool; 
-  vector<Vec3D> Nodes_rect1;vector<Int2> Elements_rect1; //nodes & connectivities of sub
-  vector<Vec3D> Nodes_rect2;vector<Int2> Elements_rect2; //nodes & connectivities of arb. shape
+  vector<Vec3D> Shape1_Nodes;vector<Int2> Shape1_Elements; //nodes & connectivities of sub
+  vector<Vec3D> Shape2_Nodes;vector<Int2> Shape2_Elements; //nodes & connectivities of arb. shape
   
-  tool.ReadMeshFileInTopFormat("rect1.top",Nodes_rect1,Elements_rect1);//function to extract coords. from m2c
-  tool.ReadMeshFileInTopFormat("rect2.top",Nodes_rect2,Elements_rect2);//function to extract coords. from m2c
+  tool.ReadMeshFileInTopFormat("rect1.top",Shape1_Nodes,Shape1_Elements);//function to extract coords. from m2c
+  tool.ReadMeshFileInTopFormat("small_sub_test.top",Shape2_Nodes,Shape2_Elements);//function to extract coords. from m2c
   // Color grid info.
   cout<<"imax: "<<imax<<endl<< "jmax: "<<jmax<<endl;
   cout<<"i0: "<<i0<<endl<< "j0: "<<j0<<endl;
@@ -125,13 +127,13 @@ int main(int argc, char* argv[]) {
 
   int shape1_color = 2; int shape2_color = 3; int overlap_color = 4;
 
-  tool.intersect_fill(start_nodex,start_nodey,imax,jmax,i0,j0,color,shape1_color,Nodes_rect1,Elements_rect1,xcoords,ycoords,intersecting_nodes,intersecting_edges); //intersect fill of sub
+  tool.intersect_fill(start_nodex,start_nodey,imax,jmax,i0,j0,color,shape1_color,Shape1_Nodes,Shape1_Elements,xcoords,ycoords,intersecting_nodes,intersecting_edges); //intersect fill of shape 1
 
-  tool.intersect_fill(start_nodex,start_nodey,imax,jmax,i0,j0,color,shape2_color,Nodes_rect2,Elements_rect2,xcoords,ycoords,intersecting_nodes,intersecting_edges); //intersect fill of arb.shape
+  tool.intersect_fill(start_nodex,start_nodey,imax,jmax,i0,j0,color,shape2_color,Shape2_Nodes,Shape2_Elements,xcoords,ycoords,intersecting_nodes,intersecting_edges); //intersect fill of shape 2
 
  //----------------------------TOPOLOGICAL CHANGE TEST----------------------------------------
  
-  Topology top(Elements_rect1,Nodes_rect1,Elements_rect2,Nodes_rect2); 
+  Topology top(Shape1_Elements,Shape1_Nodes,Shape2_Elements,Shape2_Nodes); 
 
   //INSIDE POINTS
   vector<Vec3D> pts_inside;
@@ -165,8 +167,8 @@ int main(int argc, char* argv[]) {
   }
 
   //FILLING OF GRID NODES FOR 2 ARBITRARY SHAPES
-  top.shape_fill(Elements_rect1,Nodes_rect1,xcoords,ycoords,color,shape1_color);
-  top.shape_fill(Elements_rect2,Nodes_rect2,xcoords,ycoords,color,shape2_color);
+  top.shape_fill(Shape1_Elements,Shape1_Nodes,xcoords,ycoords,color,shape1_color);
+  top.shape_fill(Shape2_Elements,Shape2_Nodes,xcoords,ycoords,color,shape2_color);
 
   //WRITING CONSTRUCTED SHAPE TO FILE IN .TOP FORMAT - (would be a good idea to have this as a function)
   if (Connectivities.size() != 0 & Nodes.size() != 0){ //case if shapes are intersecting

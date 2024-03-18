@@ -524,8 +524,17 @@ bool Tools::intersect(int grid_node1i,int grid_node1j,int grid_node2i,int grid_n
 }
 
 double Tools::point_of_intersection(Vec3D &grid_node1,Vec3D &grid_node2,Vec3D &surface_node1,Vec3D &surface_node2){ //calculates the point of intersection between 2 line segments using the bezier parameters to compute point of intersection
+// website: https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection
   double x1=grid_node1.v[0];double x2=grid_node2.v[0];double x3=surface_node1.v[0];double x4=surface_node2.v[0]; //x-coordinates
   double y1=grid_node1.v[1];double y2=grid_node2.v[1];double y3=surface_node1.v[1];double y4=surface_node2.v[1]; //y-coordinates
+
+
+  //case if grid line and surface lines are parallel to each other
+  if (x2<x3 && x1<x3 && x2<x4 && x1<x4) return 0; // parallel in x
+  if (x2>x3 && x1>x3 && x2>x4 && x1>x4) return 0;
+
+  if (y2<y3 && y1<y3 && y2<y4 && y1<y4) return 0; // parallel in y
+  if (y2>y3 && y1>y3 && y2>y4 && y1>y4) return 0;
 
   double t = ((x1-x3)*(y3-y4)-(y1-y3)*(x3-x4))/((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)); //t value (non-dimensional)
   double u = ((x1-x3)*(y1-y2)-(y1-y3)*(x1-x2))/((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)); //u value (non-dimensional)
