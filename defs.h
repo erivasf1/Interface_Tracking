@@ -63,7 +63,8 @@ struct Tools { //Tools used to compare different user-defined types
   Vec3D closest_point(Vec3D &pt1,vector<Vec3D> &pts); // provides the closest Grid point for each embedded surface node
   void max_min_coords(double &xmax,double &ymax,double &xmin,double &ymin,vector<Vec3D> &es); //provides the greatest x & y value of a given vector <Vec3D>
   int getIndex(vector<Vec3D> &v,Vec3D k); //returns the index value of a Vec3D in a Vec3D list
-  vector<Vec3D> remove(vector<Vec3D> &v,Vec3D &N); //returns the vector of the desired deleted Vec3D element
+  vector<Vec3D> remove_Vec3D(vector<Vec3D> &v,Vec3D &N); //returns the vector of the desired deleted Vec3D element
+  vector<Int2> remove_duplicates_Int2(vector<Int2> &rep); //returns a vector of non-repeating elements
   void grid_nodes_solid_domain(double &xmax,double &ymax,double &xmin,double &ymin,double &delta_x,double &delta_y,vector<double> &xcoord,vector<double> &ycoord,vector<Vec3D> &es); //provides the grid nodes that are contained in the solid domain, including the "wetted" surface -----> ONLY WORKS FOR RECTANGLES AS OF NOW!!! 
   void grid_element_solid_domain(); //!Still need to figure out arguments for this
   void flood_fill(int i,int j,int &imax,int &jmax,int &imin,int &jmin,double*** color); //performs the flood fill algorithm
@@ -94,7 +95,7 @@ public:
   vector<Vec3D> inside_points(); // returns the inside points of a shape into another shape , also vice versa
   vector<Vec3D> intersecting_points(); // returns the coordinates of the intersecting nodes of the overlaped shape
   void shape_construct(vector<Int2> &overlap_connectivities,vector<Vec3D> &overlap_nodes,vector<Vec3D> &intersecting_pts,vector<Vec3D> &inside_pts); // generates the connectivites and nodes of the overlap shape
-  void shape_fill(vector<Int2> &overlap_connectivities,vector<Vec3D> &overlap_nodes,vector<double> &xcoords,vector<double> &ycoords,double*** &color, int color_val); // fills all the grid nodes inside the overlap shape with a color
+  void shape_fill(vector<Int2> &overlap_connectivities,vector<Vec3D> &overlap_nodes,vector<double> &xcoords,vector<double> &ycoords,double*** &color, int color_val,int imax,int jmax,int i0,int j0); // fills all the grid nodes inside the overlap shape with a color
   void print_overlap_shape(); //prints the connectivities and nodes of the overlapped shape
 };
 #endif

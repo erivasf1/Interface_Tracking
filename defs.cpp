@@ -382,7 +382,7 @@ int Tools::getIndex(vector<Vec3D> &v, Vec3D K)
   return -1; //case if K is not in v
 }
 
-vector<Vec3D> Tools::remove(vector<Vec3D> &v, Vec3D &N){
+vector<Vec3D> Tools::remove_Vec3D(vector<Vec3D> &v, Vec3D &N){
   //if (v.size == 0) return -- perform error handling for this case
   vector<Vec3D> trunc; //truncated vector that is returned
   for (int i=0;i<v.size();i++){
@@ -391,6 +391,32 @@ vector<Vec3D> Tools::remove(vector<Vec3D> &v, Vec3D &N){
     trunc.push_back(v[i]);
   }
   return trunc;
+}
+
+vector<Int2> Tools::remove_duplicates_Int2(vector<Int2> &rep){
+  if (rep.size() < 2) return rep; //case if vector is too small to have repeated elements
+
+  vector<Int2> no_rep;
+  int* x1,*y1,*x2,*y2;
+  int tag;
+  for (int i=0;i<rep.size();i++){ //looping through original repeating vector
+    tag = 0;
+    if (no_rep.size()==0){ //1st element case
+      no_rep.push_back(rep[i]);
+      continue;
+    }
+    x1 = &rep[i].v[0]; y1 = &rep[i].v[1];
+    for (int j=0;j<no_rep.size();j++){ //looping through non-repeating list
+      x2 = &no_rep[j].v[0]; y2 = &no_rep[j].v[1]; 
+      if ((*x1==*x2 || *x1==*y2) && (*y1==*x2 || *y1==*y2)){
+        tag = 1;break;
+      }
+    }
+    if (tag==1) continue; //repeated element found 
+    no_rep.push_back(rep[i]);
+  }
+  
+  return no_rep;
 }
 
 void Tools::grid_nodes_solid_domain(double &xmax,double &ymax,double &xmin,double &ymin,double &delta_x,double &delta_y,vector<double> &xcoord,vector<double> &ycoord,vector<Vec3D> &es){
@@ -571,11 +597,13 @@ bool Topology::is_inside(Vec3D &point,vector<Int2> &elements,vector<Vec3D> &node
   Vec3D point_cast{100,point.v[1],point.v[2]}; //corresponding point to A in ray cast
   //now comparing if point is inside shape
   int count = 0;
+  vector<Int2> elem_collision_history;
+  vector<Vec3D> node_collision_history;
   for (int i=0;i<elements.size();i++){
     Vec3D node1 = nodes[elements[i].v[0]];
     Vec3D node2 = nodes[elements[i].v[1]];
 
-    //special case: point parallel to edge
+    //special case: ray casted point parallel to edge
     if (point.v[0]==node1.v[0] && point.v[0]==node2.v[0]){ //case if xcoord is constant
       double min_x = (node1.v[0]<node2.v[0]) ? node1.v[0]:node2.v[0];
       double max_x = (node1.v[0]>node2.v[0]) ? node1.v[0]:node2.v[0];
@@ -595,10 +623,36 @@ bool Topology::is_inside(Vec3D &point,vector<Int2> &elements,vector<Vec3D> &node
     double pt_intersect_ans = tool.point_of_intersection(point,point_cast,node1,node2); //checks for an intersection
     
     if (pt_intersect_ans == 1){
+      //cout<<"Collision with nodes:\t"<<"["<<node1.v[0]<<","<<node1.v[1]<<"]"<<"and"<<"["<<node2.v[0]<<","<<node2.v[1]<<"]"<<endl;
+      cout<<"Collision with elements:\t"<<"["<<elements[i].v[0]<<","<<elements[i].v[1]<<"]"<<endl;
+      cout<<"i number: "<<i<<endl;
+      elem_collision_history.push_back(elements[i]); //saving the "collided elements" 
       count +=1;
     }
   }
-  //cout<<"final count: "<<count<<endl;
+// repeated elements case
+  int same_line = 0;
+  if (elem_collision_history.size() >= 2){
+    elem_collision_history = tool.remove_duplicates_Int2(elem_collision_history);   
+    
+    //for lines that are drawn on the same line b/c of STL file :)
+    double* x_const = &nodes[elem_collision_history[0].v[0]].v[0];
+    double* y_const = &nodes[elem_collision_history[0].v[0]].v[1];
+    for (int i=1;i<elem_collision_history.size();i++){
+      double* x1 = &nodes[elem_collision_history[i].v[0]].v[0];
+      double* y1 = &nodes[elem_collision_history[i].v[0]].v[1];
+      if (*x1==*x_const || *y1==*y_const) same_line++; 
+    }
+
+  }
+  //cout<<"elem_collision_history size: "<<elem_collision_history.size()<<endl;
+  for (int i=0;i<elem_collision_history.size();i++){
+    //cout<<"Collision with elem_collision_history after non-repeating function:\t"<<"["<<elem_collision_history[i].v[0]<<","<<elem_collision_history[i].v[1]<<"]"<<endl;
+  } 
+  if (same_line != 0) count = elem_collision_history.size() -1;
+  else count = elem_collision_history.size(); //updates the count to the "actual" count
+  //cout<<"Collision number: "<<count<<endl;
+  cout<<"final count: "<<count<<endl;
   if (count % 2 == 0 || count == 0) return false; // returns false if collision number is even or 0
   return true;
 }
@@ -627,7 +681,7 @@ Vec3D Topology::pt_of_intersection(Vec3D &pt1_A,Vec3D &pt2_A,Vec3D &pt1_B,Vec3D 
   double x1=pt1_A.v[0];double x2=pt2_A.v[0];double x3=pt1_B.v[0];double x4=pt2_B.v[0]; //x-coordinates
   double y1=pt1_A.v[1];double y2=pt2_A.v[1];double y3=pt1_B.v[1];double y4=pt2_B.v[1]; //y-coordinates
 
-  Vec3D no_intersect(10,10,10); // no intersection value
+  Vec3D no_intersect(0,0,-1); // no intersection value
 
   //special case if line segments are parallel to each other
   if ((x1==x3 && x2==x4) || (y1==y3 && y2==y4)) return no_intersect; //this type of point will be classified as an intersecting point
@@ -659,7 +713,7 @@ vector<Vec3D> Topology::intersecting_points(){
       Vec3D pt2_b = shape2_nodes[shape2_elements[j].v[1]];
       //calculates the point of intersection, if any
       Vec3D intersect_pt = pt_of_intersection(pt1_a,pt2_a,pt1_b,pt2_b);
-      if (intersect_pt.v[0] == 10){ //no intersection condition
+      if (intersect_pt.v[2] == -1){ //no intersection condition
         continue;
       }
       intersecting_pts.push_back(intersect_pt); //appends calculated point of intersection to intersecting points vector
@@ -705,7 +759,7 @@ void Topology::shape_construct(vector<Int2> &overlap_connectivities,vector<Vec3D
     //append to the overlap_elements list
     overlap_connectivities.push_back(element);
 
-    all_unsorted_pts = tool.remove(all_unsorted_pts,pt1); //removes the point that was looked at
+    all_unsorted_pts = tool.remove_Vec3D(all_unsorted_pts,pt1); //removes the point that was looked at
     pt1 = pt_closest;
 
 
@@ -720,7 +774,7 @@ void Topology::shape_construct(vector<Int2> &overlap_connectivities,vector<Vec3D
   return;
 }
 
-void Topology::shape_fill(vector<Int2> &overlap_connectivities,vector<Vec3D> &overlap_nodes,vector<double> &xcoords,vector<double> &ycoords,double*** &color, int color_val){
+void Topology::shape_fill(vector<Int2> &overlap_connectivities,vector<Vec3D> &overlap_nodes,vector<double> &xcoords,vector<double> &ycoords,double*** &color, int color_val,int imax,int jmax,int i0,int j0){
   Tools tool; //tool object creation
   //need to define bounding box on overlap shape so grid nodes in bounding box wil be compared
   //cout<<"NOW STARTING SHAPE FILL"<<endl;
@@ -737,9 +791,10 @@ void Topology::shape_fill(vector<Int2> &overlap_connectivities,vector<Vec3D> &ov
     if (ycoords[i] >= ymin && ycoords[i] <= ymax) box_ycoords.push_back(ycoords[i]); //case if grid y coord s in overlp bounding box
   }
  
-  /*cout<<"These are the points that are in the bounding box"<<endl;  
+  cout<<"box coords number: "<<box_xcoords.size()*box_ycoords.size()<<endl;
+  //cout<<"These are the points that are in the bounding box"<<endl;  
   cout<<"bounding box size: "<<box_xcoords.size()<<"x\t"<<box_ycoords.size()<<endl;
-  for (int i=0;i<box_xcoords.size();i++){
+  /*for (int i=0;i<box_xcoords.size();i++){
     cout<<"box point: "<<box_xcoords[i]<<"\t"<<box_ycoords[i]<<endl;
   } */
   //now coloring bounding box points that are inside the overlap shape
@@ -749,7 +804,15 @@ void Topology::shape_fill(vector<Int2> &overlap_connectivities,vector<Vec3D> &ov
    //   cout<<"Grid Point: "<<grid_point.v[0]<<"\t"<<grid_point.v[1]<<endl;
   //    cout<<"grid point before the inside check:"<<endl;
     //  cout<<"box point: "<<box_xcoords[i]<<"\t"<<box_ycoords[j]<<endl;
-      
+   
+/*   for (int i=i0;i<imax;i++){
+     for (int j=j0;j<jmax;j++){
+       Vec3D grid_point{xcoords[i],ycoords[j],0};
+       bool inside = is_inside(grid_point,overlap_connectivities,overlap_nodes); 
+       if (inside==true)color[0][j][i]=color_val;
+     }
+   }
+*/
       bool inside = is_inside(grid_point,overlap_connectivities,overlap_nodes); 
       if (inside == true){
         //finds the index of the box coord in the grid coords list to determine node # for color
@@ -760,8 +823,9 @@ void Topology::shape_fill(vector<Int2> &overlap_connectivities,vector<Vec3D> &ov
         //cout<<"xindex: "<<xindex<<endl;
         //cout<<"yindex: "<<yindex<<endl;
         color[0][yindex][xindex] = color_val;
-      }
-    }
- }
+       }
+     } 
+   } 
+ 
   return;
 }

@@ -90,19 +90,6 @@ int main(int argc, char* argv[]) {
   //ycoords.insert(ycoords.begin(),ycoords[0]-dy[0]);
   ycoords.push_back(ycoords.back()+dy[0]);
   
-  /*cout << "X coords. of grid:\n"; //prints out the x coords. of the grid
-  for (unsigned int v=0;v<xcoords.size();v++) {
-    cout <<"x = "<<xcoords[v]<<endl;
-  }
-  cout << "Y coords. of grid:\n"; //prints out the y coords. of the grid
-  for (unsigned int v=0;v<ycoords.size();v++) {
-    cout <<"y = "<<ycoords[v]<<endl;
-  }
-  cout << "Z coords. of grid:\n"; //prints out the z coords. of the grid
-  for (unsigned int v=0;v<zcoords.size();v++) {
-    cout <<"z = "<<zcoords[v]<<endl;
-  }
-*/
 
 //-----------------------------SOLID-FLUID INTERFACE OF SHAPES-----------------------------
   Tools tool; 
@@ -110,7 +97,7 @@ int main(int argc, char* argv[]) {
   vector<Vec3D> Shape2_Nodes;vector<Int2> Shape2_Elements; //nodes & connectivities of arb. shape
   
   tool.ReadMeshFileInTopFormat("rect1.top",Shape1_Nodes,Shape1_Elements);//function to extract coords. from m2c
-  tool.ReadMeshFileInTopFormat("small_sub_test.top",Shape2_Nodes,Shape2_Elements);//function to extract coords. from m2c
+  tool.ReadMeshFileInTopFormat("small_sub_slice.top",Shape2_Nodes,Shape2_Elements);//function to extract coords. from m2c
   // Color grid info.
   cout<<"imax: "<<imax<<endl<< "jmax: "<<jmax<<endl;
   cout<<"i0: "<<i0<<endl<< "j0: "<<j0<<endl;
@@ -153,8 +140,8 @@ int main(int argc, char* argv[]) {
   }
 
   //CONSTRUCTION OF NODES AND CONNECTIVITIES OF OVERLAP SHAPE
-  vector<Vec3D> Nodes; vector<Int2> Connectivities;
-
+ vector<Vec3D> Nodes; vector<Int2> Connectivities;
+ 
   top.shape_construct(Connectivities,Nodes,intersecting_pts,pts_inside);
   cout<<"Nodes after overlap shape construction"<<endl;
   for (int i=0;i<Nodes.size();i++){
@@ -167,9 +154,18 @@ int main(int argc, char* argv[]) {
   }
 
   //FILLING OF GRID NODES FOR 2 ARBITRARY SHAPES
-  top.shape_fill(Shape1_Elements,Shape1_Nodes,xcoords,ycoords,color,shape1_color);
-  top.shape_fill(Shape2_Elements,Shape2_Nodes,xcoords,ycoords,color,shape2_color);
-
+  //top.shape_fill(Shape1_Elements,Shape1_Nodes,xcoords,ycoords,color,shape1_color,imax,jmax,i0,j0);
+  top.shape_fill(Shape2_Elements,Shape2_Nodes,xcoords,ycoords,color,shape2_color,imax,jmax,i0,j0);
+  
+  double x=-20.025; double y = 21.75;
+  cout<<"\nMANUAL COLOR TEST"<<endl;
+  cout<<"xcoord of test node: "<<x<<endl;
+  cout<<"ycoord of test node: "<<y<<endl;
+  cout<<"Is inside function point check"<<endl;
+  Vec3D test_pt{x,y,0};
+  //color[0][
+  if (top.is_inside(test_pt,Shape2_Elements,Shape2_Nodes)==true) cout<<"Point is inside!"<<endl; 
+  
   //WRITING CONSTRUCTED SHAPE TO FILE IN .TOP FORMAT - (would be a good idea to have this as a function)
   if (Connectivities.size() != 0 & Nodes.size() != 0){ //case if shapes are intersecting
     cout<<"Overlap detected"<<endl;
@@ -191,7 +187,7 @@ int main(int argc, char* argv[]) {
 
     }
  
-    top.shape_fill(Connectivities,Nodes,xcoords,ycoords,color,overlap_color); //fills the grid nodes that are in overlap shape
+    top.shape_fill(Connectivities,Nodes,xcoords,ycoords,color,overlap_color,imax,jmax,i0,j0); //fills the grid nodes that are in overlap shape
   }
 
   //---------------------------GRID FLOOD FILL-------------------------------------------
