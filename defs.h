@@ -88,8 +88,8 @@ public:
     shape1_elements = connectivities1; shape1_nodes = nodes1;  
     shape2_elements = connectivities2; shape2_nodes = nodes2;  
   }
-  //functions
 
+  //functions
   bool is_inside(Vec3D &point,vector<Int2> &elements,vector<Vec3D> &nodes);// returns true if point is inside shape
   Vec3D pt_of_intersection(Vec3D &pt1_A,Vec3D &pt2_A,Vec3D &pt1_B,Vec3D &pt2_B); // returns the intersecting point between 2 line segments
   vector<Vec3D> inside_points(); // returns the inside points of a shape into another shape , also vice versa

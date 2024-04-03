@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
   vector<Vec3D> Shape1_Nodes;vector<Int2> Shape1_Elements; //nodes & connectivities of sub
   vector<Vec3D> Shape2_Nodes;vector<Int2> Shape2_Elements; //nodes & connectivities of arb. shape
   
-  tool.ReadMeshFileInTopFormat("rect1.top",Shape1_Nodes,Shape1_Elements);//function to extract coords. from m2c
+  tool.ReadMeshFileInTopFormat("Moved_Shape.top",Shape1_Nodes,Shape1_Elements);//function to extract coords. from m2c
   tool.ReadMeshFileInTopFormat("small_sub_slice.top",Shape2_Nodes,Shape2_Elements);//function to extract coords. from m2c
   // Color grid info.
   cout<<"imax: "<<imax<<endl<< "jmax: "<<jmax<<endl;
@@ -140,7 +140,7 @@ int main(int argc, char* argv[]) {
   }
 
   //CONSTRUCTION OF NODES AND CONNECTIVITIES OF OVERLAP SHAPE
- vector<Vec3D> Nodes; vector<Int2> Connectivities;
+  vector<Vec3D> Nodes; vector<Int2> Connectivities;
  
   top.shape_construct(Connectivities,Nodes,intersecting_pts,pts_inside);
   cout<<"Nodes after overlap shape construction"<<endl;
@@ -154,10 +154,10 @@ int main(int argc, char* argv[]) {
   }
 
   //FILLING OF GRID NODES FOR 2 ARBITRARY SHAPES
-  //top.shape_fill(Shape1_Elements,Shape1_Nodes,xcoords,ycoords,color,shape1_color,imax,jmax,i0,j0);
+  top.shape_fill(Shape1_Elements,Shape1_Nodes,xcoords,ycoords,color,shape1_color,imax,jmax,i0,j0);
   top.shape_fill(Shape2_Elements,Shape2_Nodes,xcoords,ycoords,color,shape2_color,imax,jmax,i0,j0);
   
-  double x=-20.025; double y = 21.75;
+  double x=21.4313; double y = 43.0572;
   cout<<"\nMANUAL COLOR TEST"<<endl;
   cout<<"xcoord of test node: "<<x<<endl;
   cout<<"ycoord of test node: "<<y<<endl;
@@ -170,7 +170,7 @@ int main(int argc, char* argv[]) {
   if (Connectivities.size() != 0 & Nodes.size() != 0){ //case if shapes are intersecting
     cout<<"Overlap detected"<<endl;
     ofstream myfile;
-    myfile.open("overlap_shape.txt");
+    myfile.open("overlap_shape.top");
     if (myfile.is_open()){
 
       myfile<<"Nodes MySurfaceNodes"<<endl;
@@ -192,11 +192,9 @@ int main(int argc, char* argv[]) {
 
   //---------------------------GRID FLOOD FILL-------------------------------------------
 
-
   tool.flood_fill(start_nodex,start_nodey,imax,jmax,i0,j0,color);
 
   Color.RestoreDataPointerAndInsert();
-  //coordinates.RestoreDataPointerToLocalVector();
   Color.WriteToVTRFile("Color.vtr", "Color");
 
 

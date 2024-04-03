@@ -590,6 +590,8 @@ void Tools::SpaceVariable3D_print(double*** color,int &imax,int &jmax){
 
 //---------------TOPOLOGY TRACKER FUNCTION DEFINITIONS-------------
 
+//MAJOR CHANGE UP FOR THIS!!!: Use algorithm provided by geeks for geeks or at least incorporate some
+//of it. Hopefully, it should take care of the collinear points with the edges
 bool Topology::is_inside(Vec3D &point,vector<Int2> &elements,vector<Vec3D> &nodes){
   Tools tool;
 
@@ -599,38 +601,25 @@ bool Topology::is_inside(Vec3D &point,vector<Int2> &elements,vector<Vec3D> &node
   int count = 0;
   vector<Int2> elem_collision_history;
   vector<Vec3D> node_collision_history;
+  double xmin,xmax,ymin,ymax;
   for (int i=0;i<elements.size();i++){
     Vec3D node1 = nodes[elements[i].v[0]];
     Vec3D node2 = nodes[elements[i].v[1]];
-
-    //special case: ray casted point parallel to edge
-    if (point.v[0]==node1.v[0] && point.v[0]==node2.v[0]){ //case if xcoord is constant
-      double min_x = (node1.v[0]<node2.v[0]) ? node1.v[0]:node2.v[0];
-      double max_x = (node1.v[0]>node2.v[0]) ? node1.v[0]:node2.v[0];
-
-      if (point.v[0] >= min_x && point.v[0] <= max_x) return true;
-      else return false;
-    } 
-
-    if (point.v[1]==node1.v[1] && point.v[1]==node2.v[1]){ //case if ycoord is constant
-      double min_y = (node1.v[1]<node2.v[1]) ? node1.v[1]:node2.v[1];
-      double max_y = (node1.v[1]>node2.v[1]) ? node1.v[1]:node2.v[1];
-
-      if (point.v[0] >= min_y && point.v[0] <= max_y) return true;
-      else return false;
-    } 
-
-    double pt_intersect_ans = tool.point_of_intersection(point,point_cast,node1,node2); //checks for an intersection
+    vector<Vec3D> nodes{node1,node2};
+    tool.max_min_coords(xmax,ymax,xmin,ymin,nodes);
     
-    if (pt_intersect_ans == 1){
-      //cout<<"Collision with nodes:\t"<<"["<<node1.v[0]<<","<<node1.v[1]<<"]"<<"and"<<"["<<node2.v[0]<<","<<node2.v[1]<<"]"<<endl;
-      cout<<"Collision with elements:\t"<<"["<<elements[i].v[0]<<","<<elements[i].v[1]<<"]"<<endl;
-      cout<<"i number: "<<i<<endl;
-      elem_collision_history.push_back(elements[i]); //saving the "collided elements" 
-      count +=1;
+    if (point.v[1] > ymin){ //checking if point is above y min
+
+      if (point.v[1] <= ymax && point.v[0] <= xmax){ //checking if point is below or eq to ymax & left or eq to xmax
+        Vec3D pt_of_intersect = pt_of_intersection(point,point_cast,node1,node2);
+        if (point.v[0] == node1.v[0] || point.v[0] <= pt_of_intersect.v[0]){ //checks if point is on same line of element or left or eq to the intersection point
+          count++; 
+        }
+      }
     }
   }
-// repeated elements case
+
+/* repeated elements case
   int same_line = 0;
   if (elem_collision_history.size() >= 2){
     elem_collision_history = tool.remove_duplicates_Int2(elem_collision_history);   
@@ -650,9 +639,9 @@ bool Topology::is_inside(Vec3D &point,vector<Int2> &elements,vector<Vec3D> &node
     //cout<<"Collision with elem_collision_history after non-repeating function:\t"<<"["<<elem_collision_history[i].v[0]<<","<<elem_collision_history[i].v[1]<<"]"<<endl;
   } 
   if (same_line != 0) count = elem_collision_history.size() -1;
-  else count = elem_collision_history.size(); //updates the count to the "actual" count
+  else count = elem_collision_history.size(); //updates the count to the "actual" count*/
   //cout<<"Collision number: "<<count<<endl;
-  cout<<"final count: "<<count<<endl;
+  //cout<<"final count: "<<count<<endl;
   if (count % 2 == 0 || count == 0) return false; // returns false if collision number is even or 0
   return true;
 }
@@ -684,7 +673,7 @@ Vec3D Topology::pt_of_intersection(Vec3D &pt1_A,Vec3D &pt2_A,Vec3D &pt1_B,Vec3D 
   Vec3D no_intersect(0,0,-1); // no intersection value
 
   //special case if line segments are parallel to each other
-  if ((x1==x3 && x2==x4) || (y1==y3 && y2==y4)) return no_intersect; //this type of point will be classified as an intersecting point
+  if ((x1==x3 && x2==x4) || (y1==y3 && y2==y4)) return no_intersect; //this type of point will NOT be classified as an intersecting point
 
   double t = ((x1-x3)*(y3-y4)-(y1-y3)*(x3-x4))/((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)); //t value (non-dimensional)
   double u = ((x1-x3)*(y1-y2)-(y1-y3)*(x1-x2))/((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)); //u value (non-dimensional)
@@ -738,16 +727,16 @@ void Topology::shape_construct(vector<Int2> &overlap_connectivities,vector<Vec3D
   Vec3D pt1,pt_closest;
   Tools tool;
   Int2 element;
-  cout<<"\nbeginning overlap shape construction: \n";
+  //cout<<"\nbeginning overlap shape construction: \n";
   //construction of overlap nodes vector
   pt1 = all_unsorted_pts[0]; //starts off at 1st point of unsorted list
   while (all_unsorted_pts.size() != 1) {
   
-    cout<<"unsorted list size: "<<all_unsorted_pts.size()<<endl;
+    //cout<<"unsorted list size: "<<all_unsorted_pts.size()<<endl;
 
     pt_closest = tool.closest_point(pt1,all_unsorted_pts);
-    pt1.print("Point 1");
-    pt_closest.print("Closest point");
+    //pt1.print("Point 1");
+    //pt_closest.print("Closest point");
  
     //get index of closest point and pt 1
     int index_pt1 = tool.getIndex(overlap_nodes,pt1); //?
@@ -791,9 +780,9 @@ void Topology::shape_fill(vector<Int2> &overlap_connectivities,vector<Vec3D> &ov
     if (ycoords[i] >= ymin && ycoords[i] <= ymax) box_ycoords.push_back(ycoords[i]); //case if grid y coord s in overlp bounding box
   }
  
-  cout<<"box coords number: "<<box_xcoords.size()*box_ycoords.size()<<endl;
+  //cout<<"box coords number: "<<box_xcoords.size()*box_ycoords.size()<<endl;
   //cout<<"These are the points that are in the bounding box"<<endl;  
-  cout<<"bounding box size: "<<box_xcoords.size()<<"x\t"<<box_ycoords.size()<<endl;
+  //cout<<"bounding box size: "<<box_xcoords.size()<<"x\t"<<box_ycoords.size()<<endl;
   /*for (int i=0;i<box_xcoords.size();i++){
     cout<<"box point: "<<box_xcoords[i]<<"\t"<<box_ycoords[i]<<endl;
   } */
@@ -829,3 +818,4 @@ void Topology::shape_fill(vector<Int2> &overlap_connectivities,vector<Vec3D> &ov
  
   return;
 }
+
