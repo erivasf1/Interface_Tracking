@@ -64,7 +64,7 @@ add_custom_target(
 
 # add the executable
 add_executable(erick
-main.cpp
+Main.cpp
 defs.cpp
 Utils.cpp
 IoData.cpp
@@ -72,9 +72,23 @@ MeshGenerator.cpp
 SpaceOperator.cpp
 SpaceVariable.cpp)
 
+add_executable(movedshape
+ShapeMove.cpp
+defs.cpp
+Utils.cpp
+IoData.cpp
+MeshGenerator.cpp
+SpaceOperator.cpp
+SpaceVariable.cpp)
 
 # link to libraries
 target_link_libraries(erick petsc mpi parser)
 #target_link_libraries(erick ${CMAKE_DL_LIBS}) #linking to the dl library (-ldl)
 add_dependencies(erick extern_lib)
 #add_dependencies(erick VersionHeader)
+
+# link to libraries
+target_link_libraries(movedshape petsc mpi parser)
+#target_link_libraries(movedshape ${CMAKE_DL_LIBS}) #linking to the dl library (-ldl)
+add_dependencies(movedshape extern_lib)
+#add_dependencies(movedshape VersionHeader)

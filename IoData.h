@@ -80,6 +80,33 @@ struct MeshData {
 
 //------------------------------------------------------------------------------
 
+struct Shape {
+  
+  const char *filename; //!< number of "enclosed" shapes
+
+  Shape();
+  ~Shape() {}
+
+  Assigner *getAssigner();
+  //void setup(const char *, ClassAssigner * = 0);
+};
+
+//------------------------------------------------------------------------------
+
+struct ShapeList {
+  
+  ObjectMap<Shape> shapes;
+
+  ShapeList();
+  ~ShapeList() {}
+
+  void setup(const char *, ClassAssigner * = 0);
+
+  //Assigner *getAssigner();
+};
+
+//------------------------------------------------------------------------------
+
 class IoData {
 
   char *cmdFileName;
@@ -88,6 +115,10 @@ class IoData {
 public:
 
   MeshData mesh;
+
+  Shape shape;
+
+  ShapeList shapelist;
 
 public:
 

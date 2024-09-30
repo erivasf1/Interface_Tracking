@@ -82,7 +82,6 @@ public:
   void Setup(MPI_Comm &comm_, DM *dm_);
 
   double*** GetDataPointer(); 
-
   /** The following two functions involve MPI communications
    *  Note that only the data in the real domain gets "communicated" (i.e. inserted or added)
    *  Data in the ghost boundary (i.e. outside the physical domain) do not participate 

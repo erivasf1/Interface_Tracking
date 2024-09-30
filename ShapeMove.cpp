@@ -1,4 +1,4 @@
-// File to Move User-defined Shape - Erick Rivas
+// Main file to move shape - Erick Rivas
 #include<defs.h>
 #include<SpaceOperator.h>
 #include<MeshGenerator.h>
@@ -33,12 +33,12 @@ int main(int argc, char* argv[]) {
   Tools tool;
   vector<Vec3D> Nodes;
   vector<Int2> Elements;
-  double dx = 10.0; //desired change for nodes in x-dir.
-  double dy = 15.0; //desired change for nodes in y-dir.
+  double dx = 0.0; //desired change for nodes in x-dir.
+  double dy = -3.0; //desired change for nodes in y-dir.
   double* dx_ptr = &dx; double* dy_ptr = &dy;
 
 //-------------------READING ORIGINAL FILE--------------------
-  tool.ReadMeshFileInTopFormat("small_sub_slice.top",Nodes,Elements);
+  tool.ReadMeshFileInTopFormat("rect1.top",Nodes,Elements);
 
 //-----------------NEW POSITIONS FOR NODES--------------------
   for (auto i=0;i<Nodes.size();i++){

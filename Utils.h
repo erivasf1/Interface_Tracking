@@ -142,7 +142,6 @@ void tabulate2Dfunction_uniform(Functor fun, double xmin, double xmax,
 
 //--------------------------------------------------
 
-
 //--------------------------------------------------
 
 

@@ -160,8 +160,7 @@ void MeshData::setup(const char *name, ClassAssigner *father)
                                "SlipWall", 3, //slip wall,
                                "StickWall", 4, //no-slip wall
                                "NoSlipWall", 4, "Symmetry", 5,
-                               "Overset", 6);
- } 
+                               "Overset", 6); } 
 
 //------------------------------------------------------------------------------
 
@@ -255,6 +254,72 @@ void IoData::setupCmdFileVariables()
 
   mesh.setup("Mesh");
 
+  //shape.setup("Shape");
+
+  shapelist.setup("ShapeList");
+
 }
+
+//------------------------------------------------------------------------------
+
+Shape::Shape()
+{
+  //filename = ""; //by default only 1 shape is tested
+  return; //return by default
+}
+
+//------------------------------------------------------------------------------
+
+Assigner* Shape::getAssigner()
+{
+  ClassAssigner *ca = new ClassAssigner("normal", 1, nullAssigner);
+
+  new ClassStr<Shape>(ca, "FileName", this,
+                 &Shape::filename);
+  return ca;
+}
+
+//------------------------------------------------------------------------------
+/*
+void Shape::setup(const char *name, ClassAssigner *father)
+{
+
+ ClassAssigner *ca = new ClassAssigner(name, 1, father);
+
+ new ClassStr<Shape>(ca, "FileName", this, 
+                &Shape::filename);
+}
+*/
+//------------------------------------------------------------------------------
+
+ShapeList::ShapeList()
+{
+
+}
+
+//------------------------------------------------------------------------------
+
+void ShapeList::setup(const char *name, ClassAssigner *father)
+{
+
+ ClassAssigner *ca = new ClassAssigner(name, 1, father);
+
+ shapes.setup("Shape", ca);
+
+ //new ClassStr<Shape>(ca, "FileName", this, 
+ //               &Shape::filename);
+}
+
+//------------------------------------------------------------------------------
+
+/*Assigner*
+Shapes::getAssigner()
+{
+  ClassAssigner *ca = new ClassAssigner("normal", 1, nullAssigner);
+
+  new ClassStr<Shapes>(ca, "FileName", this,
+                 &Shapes::filename);
+  return ca;
+}*/
 
 //------------------------------------------------------------------------------

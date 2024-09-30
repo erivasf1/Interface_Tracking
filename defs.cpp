@@ -1,6 +1,6 @@
 // Function definitions program
 #include "defs.h"
- 
+/* 
 //----Mesh class function definitions--------------------
 
 Mesh::Mesh(int x,int y) { // constructor def. - creates the vector of x_nodes and y_nodes
@@ -27,19 +27,19 @@ Point::Point(int x,int y) //constructor
 void Point::print_point() {
   cout<<"["<<x_coord<<","<<y_coord<<"]";
 }
-
+*/
 
 //------------TOOLS CLASS FUNCTION DEFINITIONS--------------------- 
-void Tools::point_mesh_valid(Mesh m,Point pt) { //is_valid def. - checks for validity of point
-/*
+/*void Tools::point_mesh_valid(Mesh m,Point pt) { //is_valid def. - checks for validity of point
+
   bool validity = (m.x_nodes>=pt.x_coord && m.y_nodes>=pt.y_coord)? true:false;
   if (validity==false) {
     cout <<"Point is not in bounds: ";
     p.print_point();
     //error("Invalid Point");
   }
-*/
-}
+
+}*/
 void Tools::extract_coords(vector<int>& nlist,vector<int>& xlist,vector<int>& ylist,vector<int>& zlist){
 
   string file = "embedded_surface1.top";
@@ -448,11 +448,14 @@ void Tools::flood_fill(int i,int j,int &imax,int &jmax,int &imin,int &jmin,doubl
 void Tools::intersect_fill(int i,int j,int &imax,int &jmax,int &imin,int &jmin,double*** color,int &color_val,vector<Vec3D> &surface_nodes,vector<Int2> &surface_connectivities,vector<double> &xcoords,vector<double> &ycoords,vector<Vec3D> &intersecting_nodes,vector<Int2> &intersecting_edges){
 
   for (int j=jmin;j<jmax;j++){
+    //print("j iteration#: %d\n", j);
     for (int i=imin;i<imax;i++){
+      //print("i iteration#: %d\n", i);
       
-  //*************************Intersection check(Fluid-Structure Interface)******************************//
+  //*************************Intersection check (Fluid-Structure Interface)******************************//
   //***BLOCKED meaning - line connnecting one node from another is "blocked" an intersecting line from the embedded surface******
-      if (i==imax||i==jmax||i==imin||j==jmin) continue;
+  
+      if (i==imax||j==jmax||i==imin||j==jmin) continue;
       bool intersection_south = intersect(i,j,i,j-1,imax,jmax,imin,jmin,surface_nodes,surface_connectivities,xcoords,ycoords); //grid line segment south of node - intersection check
       Vec3D P1, P2; //declaration of intersecting nodes
       Int2 edge; //declaration of intersecting edge
@@ -531,9 +534,8 @@ bool Tools::intersect(int grid_node1i,int grid_node1j,int grid_node2i,int grid_n
   Vec3D grid_node1(xcoords[grid_node1i],ycoords[grid_node1j],0); //coordinates of grid nodes - Vec3D
   Vec3D grid_node2(xcoords[grid_node2i],ycoords[grid_node2j],0);
 
-  //cout<<"gridnode1i: "<<grid_node1i<<"\t"<<"grid_node1j: "<<grid_node1j<<endl;
-
-  for (long unsigned int i=0;i<surface_connectivities.size();i++){ //comparing specific grid line segment with all line segmnents of embedded surface
+  //print("Before checking grid line with all embedded surface lines\n");
+  for (long unsigned int i=0;i<surface_connectivities.size();i++){ //comparing specific grid line segment with all line segments of embedded surface
     Int2 surface_lineseg = surface_connectivities[i]; //line segment of embedded surface
     int* p1 = &surface_lineseg.v[0]; int* p2 = &surface_lineseg.v[1];
     //cout<<"node1 id from connectivities = "<<*p1<<endl; 
@@ -716,6 +718,61 @@ void Topology::shape_construct(vector<Int2> &overlap_connectivities,vector<Vec3D
     cout<<"Shapes do not intersect!"<<endl;
     return;
   }
+/*
+//---------------------------------------------------------------------------------------------------------------
+  //START OF NEW CONSTRUCTION ALGORITHM
+  Tools tool;
+  //creation of nodes list - intersecting_pts + inside_pts
+  for (int i=0;i<intersecting_pts.size();i++){ 
+    overlap_nodes.push_back(intersecting_pts[i]);
+  }
+  for (int i=0;i<inside_pts.size();i++){ 
+    overlap_nodes.push_back(inside_pts[i]);
+  }
+
+  Vec3D start = intersecting_pts[0]; //starting construction at an intersection point - 1st point
+  Vec3D start_closest = tool.closest_point(start,inside_pts); //closest inside point to start point
+  int start_index = tool.getIndex(start,overlap_nodes); //start point index in overlap_nodes
+  int start_closest_index = tool.getIndex(overlap_nodes,start_closest); //closest pt to start index in overlap_nodes
+
+  Int2 element_1{start_index,start_closest_index}; //1st element to overlap_connectivities
+  
+  overlap_connectivities.push_back(element1);
+  
+  Vec3D current_pt = start_closest;
+  Int2 element;
+  while (current_pt != start){
+    if (point_in_list(current_pt,inside_pts) == true){ //checking if the current point is an inside point
+      if (point_in_list(current_pt,shape1_nodes) == true){ // case if it is a shape1 point
+        int current_pt_index = tool.getIndex(shape1_nodes,curent_pt);
+        for (int k=0;k<shape1_elements.size();k++){
+          if (current_pt_index == shape1_elements[k].v[0]){
+            Vec3D neighbor_pt = shape1_nodes[shape1_elements[k].v[1]]; //neighbor point to current point
+            int neighbor_pt_index = tool.getIndex(overlap_nodes,neighbor_pt); //index in overlap_nodes
+            current_pt_index = tool.getIndex(overlap_nodes,curent_pt); //resassigns to index in overlap_nodes
+            element.v[0] = current_pt_index; element.v[1] = neighbor_pt_index;
+            overlap_connectivities.push_back(element); //adds element to connectivities list
+            current_pt = neighbor_pt; //updates current point to the neighbor point
+          }
+        }
+      }
+    }
+
+
+
+
+  }
+
+
+
+
+
+
+//---------------------------------------------------------------------------------------------------------------
+*/
+
+
+
   //creation of unsorted list of interesecting + inside points - all_unsorted_pts
   for (int i=0;i<intersecting_pts.size();i++){ 
     overlap_nodes.push_back(intersecting_pts[i]);
