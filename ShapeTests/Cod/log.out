@@ -1,0 +1,11 @@
+- Found 7160 triangular elements in Cod.stl.
+- Slicing plane: Origin: (0.000000e+00, 0.000000e+00, 0.000000e+00), Normal: (1.000000e+00, 0.000000e+00, 0.000000e+00).
+- Obtained 200 nodes and 100 edges/elements on the cut-plane.
+- Detected and removed 100 duplicate nodes. Tolerance: 1.000000e-07.
+- Detected and removed 0 degenerate elements (single node).
+- Dropped 0 hanging nodes.
+- Final: 100 nodes, 100 edges/elements.
+- Wrote the 2D slice (in the original 3D space) to Cod_slice.top.
+- Created 2D coordinate system: O(0.000000e+00, 0.000000e+00, 0.000000e+00), X(0.000000e+00, 1.000000e+00, 0.000000e+00), Y(0.000000e+00, 0.000000e+00, 1.000000e+00).
+- Wrote the 2D slice (using the new 2D coordinates) to Cod_slice_xy.top.
+- Successful completion.

@@ -1,0 +1,8 @@
+Nodes MySurfaceNodes
+1  1.1  1.1  0
+2 -1.7  -1.7  0
+3  2 -1.7  0
+Elements MySurface using MySurfaceNodes
+1  1  1  2 
+2  1  2  3
+3  1  3  1

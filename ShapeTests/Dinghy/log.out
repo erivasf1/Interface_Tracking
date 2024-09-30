@@ -1,0 +1,18 @@
+Warning: Ignored lines in Dinghy.obj starting with mtllib.
+Warning: Ignored lines in Dinghy.obj starting with s.
+Warning: Ignored lines in Dinghy.obj starting with usemtl.
+Warning: Ignored lines in Dinghy.obj starting with vn.
+Warning: Ignored lines in Dinghy.obj starting with vt.
+- Found 50477 nodes in Dinghy.obj.
+- Obtained 100950 triangular elements in group Dinghy from Dinghy.obj.
+- Found 100950 triangular elements in Dinghy.obj.
+- Slicing plane: Origin: (0.000000e+00, 0.000000e+00, 5.000000e+01), Normal: (0.000000e+00, 7.071068e-01, 7.071068e-01).
+- Obtained 632 nodes and 316 edges/elements on the cut-plane.
+- Detected and removed 316 duplicate nodes. Tolerance: 1.000000e-07.
+- Detected and removed 0 degenerate elements (single node).
+- Dropped 0 hanging nodes.
+- Final: 316 nodes, 316 edges/elements.
+- Wrote the 2D slice (in the original 3D space) to Dinghy_slice.top.
+- Created 2D coordinate system: O(0.000000e+00, 0.000000e+00, 5.000000e+01), X(0.000000e+00, -7.071068e-01, 7.071068e-01), Y(1.000000e+00, 0.000000e+00, 0.000000e+00).
+- Wrote the 2D slice (using the new 2D coordinates) to Dinghy_slice_xy.top.
+- Successful completion.
